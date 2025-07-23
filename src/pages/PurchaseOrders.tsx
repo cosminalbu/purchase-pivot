@@ -203,7 +203,7 @@ const PurchaseOrders = () => {
             </TableHeader>
             <TableBody>
               {filteredPOs.map((po) => (
-                <TableRow key={po.id} className="hover:bg-accent/50">
+                <TableRow key={po.id} className="hover:bg-accent">
                   <TableCell className="font-medium">{po.id}</TableCell>
                   <TableCell>{po.supplier}</TableCell>
                   <TableCell className="text-muted-foreground">{po.contact}</TableCell>

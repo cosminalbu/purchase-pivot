@@ -193,7 +193,7 @@ const Suppliers = () => {
             </TableHeader>
             <TableBody>
               {filteredSuppliers.map((supplier) => (
-                <TableRow key={supplier.id} className="hover:bg-accent/50">
+                <TableRow key={supplier.id} className="hover:bg-accent">
                   <TableCell>
                     <div>
                       <p className="font-medium text-foreground">{supplier.companyName}</p>

@@ -121,7 +121,7 @@ const Dashboard = () => {
               {mockRecentPOs.map((po) => (
                 <div
                   key={po.id}
-                  className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors"
+                  className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent transition-colors"
                 >
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center space-x-3">
@@ -184,14 +184,14 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-surface rounded-md">
+                <div className="flex items-center justify-between p-3 bg-muted rounded-md">
                   <div>
                     <p className="font-medium text-sm">PO-2024-001</p>
                     <p className="text-xs text-muted-foreground">$12,450</p>
                   </div>
                   <StatusBadge status="pending" />
                 </div>
-                <div className="flex items-center justify-between p-3 bg-surface rounded-md">
+                <div className="flex items-center justify-between p-3 bg-muted rounded-md">
                   <div>
                     <p className="font-medium text-sm">PO-2024-005</p>
                     <p className="text-xs text-muted-foreground">$3,200</p>

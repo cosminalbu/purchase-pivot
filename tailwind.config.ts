@@ -61,10 +61,6 @@ export default {
 					received: 'hsl(var(--status-received))',
 					completed: 'hsl(var(--status-completed))'
 				},
-				surface: {
-					DEFAULT: 'hsl(var(--surface))',
-					secondary: 'hsl(var(--surface-secondary))'
-				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
