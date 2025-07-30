@@ -39,6 +39,7 @@ import { useSuppliers } from "@/hooks/useSuppliers";
 import { usePurchaseOrders } from "@/hooks/usePurchaseOrders";
 import { PurchaseOrderLineItems, LineItem } from "./PurchaseOrderLineItems";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const purchaseOrderSchema = z.object({
   supplier_id: z.string().min(1, "Supplier is required"),
@@ -101,9 +102,25 @@ export const CreatePurchaseOrderDialog = ({ open, onOpenChange }: CreatePurchase
 
       const purchaseOrder = await addPurchaseOrder(purchaseOrderData);
 
-      // TODO: Add line items to the purchase order
-      // This would typically be done in a transaction, but for now we'll handle it separately
-      // The line items will be added in the next phase when we implement the full workflow
+      // Save line items to the database
+      if (purchaseOrder?.id) {
+        const lineItemsData = lineItems.map(item => ({
+          purchase_order_id: purchaseOrder.id,
+          item_description: item.item_description,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          line_total: item.line_total,
+          notes: item.notes || null
+        }));
+
+        const { error: lineItemsError } = await supabase
+          .from('purchase_order_line_items')
+          .insert(lineItemsData);
+
+        if (lineItemsError) {
+          throw new Error('Failed to save line items');
+        }
+      }
 
       toast({
         title: "Success",
