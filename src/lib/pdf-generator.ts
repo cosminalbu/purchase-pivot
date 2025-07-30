@@ -18,79 +18,80 @@ export const generatePurchaseOrderPDF = async (
 ) => {
   const {
     includeLineItems = true,
-    companyName = 'Your Company Name',
-    companyAddress = '123 Business Street\nCity, State 12345',
-    companyPhone = '+61 2 1234 5678',
-    companyEmail = 'info@yourcompany.com.au'
+    companyName = 'MTM Windows Pty Ltd',
+    companyAddress = '4 Tullamarine Park Road\nTullamarine, Victoria 3043',
+    companyPhone = '+61 3 9310 5544',
+    companyEmail = 'quotes@mtmaluminium.com.au'
   } = options
 
   const doc = new jsPDF()
   const pageWidth = doc.internal.pageSize.width
+  const pageHeight = doc.internal.pageSize.height
   let yPosition = 20
 
-  // Header
-  doc.setFontSize(20)
+  // Header - Company Name
+  doc.setFontSize(18)
   doc.setTextColor(33, 33, 33)
-  doc.text('PURCHASE ORDER', pageWidth / 2, yPosition, { align: 'center' })
+  doc.text(companyName, 20, yPosition)
   
-  yPosition += 15
-  
-  // Company Information
-  doc.setFontSize(12)
+  yPosition += 8
+  doc.setFontSize(10)
   doc.setTextColor(100, 100, 100)
   const companyLines = companyAddress.split('\n')
-  doc.text(companyName, 20, yPosition)
-  yPosition += 5
-  
   companyLines.forEach(line => {
     doc.text(line, 20, yPosition)
-    yPosition += 5
+    yPosition += 4
   })
-  
   doc.text(`Phone: ${companyPhone}`, 20, yPosition)
-  yPosition += 5
+  yPosition += 4
   doc.text(`Email: ${companyEmail}`, 20, yPosition)
   
-  // PO Details Box
+  // Purchase Order Title - Center
+  doc.setFontSize(24)
+  doc.setTextColor(33, 33, 33)
+  doc.text('PURCHASE ORDER', pageWidth / 2, 35, { align: 'center' })
+  
+  // Date and PO Number boxes - Top Right
+  const rightColumnX = pageWidth - 85
   yPosition = 20
-  const rightColumnX = pageWidth - 80
   
-  doc.setFontSize(14)
+  // Draw boxes for date and PO number
+  doc.setDrawColor(200, 200, 200)
+  doc.setLineWidth(0.5)
+  
+  // Date box
+  doc.rect(rightColumnX, yPosition, 80, 12)
+  doc.setFontSize(8)
+  doc.setTextColor(100, 100, 100)
+  doc.text('DATE', rightColumnX + 2, yPosition + 4)
+  doc.setFontSize(10)
   doc.setTextColor(33, 33, 33)
-  doc.text('PO Details', rightColumnX, yPosition)
+  doc.text(purchaseOrder.order_date ? new Date(purchaseOrder.order_date).toLocaleDateString('en-AU') : new Date().toLocaleDateString('en-AU'), rightColumnX + 2, yPosition + 9)
   
-  yPosition += 10
+  // PO Number box
+  yPosition += 15
+  doc.rect(rightColumnX, yPosition, 80, 12)
+  doc.setFontSize(8)
+  doc.setTextColor(100, 100, 100)
+  doc.text('PURCHASE ORDER #', rightColumnX + 2, yPosition + 4)
+  doc.setFontSize(10)
+  doc.setTextColor(33, 33, 33)
+  doc.text(purchaseOrder.po_number, rightColumnX + 2, yPosition + 9)
+  
+  // Vendor Section
+  yPosition = 60
+  doc.setFontSize(12)
+  doc.setTextColor(33, 33, 33)
+  doc.text('VENDOR', 20, yPosition)
+  
+  yPosition += 8
   doc.setFontSize(10)
   doc.setTextColor(100, 100, 100)
   
-  // PO Information
-  const poInfo = [
-    ['PO Number:', purchaseOrder.po_number],
-    ['Status:', purchaseOrder.status.toUpperCase()],
-    ['Order Date:', purchaseOrder.order_date ? new Date(purchaseOrder.order_date).toLocaleDateString() : 'N/A'],
-    ['Delivery Date:', purchaseOrder.delivery_date ? new Date(purchaseOrder.delivery_date).toLocaleDateString() : 'N/A'],
-    ['Currency:', purchaseOrder.currency || 'AUD']
-  ]
-  
-  poInfo.forEach(([label, value]) => {
-    doc.text(label, rightColumnX, yPosition)
-    doc.text(value, rightColumnX + 25, yPosition)
-    yPosition += 5
-  })
-  
-  // Supplier Information
-  yPosition = 80
-  doc.setFontSize(14)
-  doc.setTextColor(33, 33, 33)
-  doc.text('Supplier Information', 20, yPosition)
-  
-  yPosition += 10
-  doc.setFontSize(10)
-  doc.setTextColor(100, 100, 100)
-  
-  if (purchaseOrder.supplier) {
-    const supplier = purchaseOrder.supplier
-    doc.text(`Company: ${supplier.company_name}`, 20, yPosition)
+  // Handle both supplier and suppliers properties
+  const supplier = purchaseOrder.supplier || purchaseOrder.suppliers
+  if (supplier) {
+    doc.text(supplier.company_name, 20, yPosition)
     yPosition += 5
     
     if (supplier.abn) {
@@ -99,17 +100,17 @@ export const generatePurchaseOrderPDF = async (
     }
     
     if (supplier.address_line_1) {
-      doc.text(`Address: ${supplier.address_line_1}`, 20, yPosition)
+      doc.text(supplier.address_line_1, 20, yPosition)
       yPosition += 5
       
       if (supplier.address_line_2) {
-        doc.text(`         ${supplier.address_line_2}`, 20, yPosition)
+        doc.text(supplier.address_line_2, 20, yPosition)
         yPosition += 5
       }
       
       const addressParts = [supplier.city, supplier.state, supplier.postal_code].filter(Boolean)
       if (addressParts.length > 0) {
-        doc.text(`         ${addressParts.join(', ')}`, 20, yPosition)
+        doc.text(addressParts.join(', '), 20, yPosition)
         yPosition += 5
       }
     }
@@ -124,80 +125,146 @@ export const generatePurchaseOrderPDF = async (
       yPosition += 5
     }
   }
+
+  // Ship To Section
+  const shipToX = pageWidth / 2 + 10
+  yPosition = 60
+  doc.setFontSize(12)
+  doc.setTextColor(33, 33, 33)
+  doc.text('SHIP TO', shipToX, yPosition)
+  
+  yPosition += 8
+  doc.setFontSize(10)
+  doc.setTextColor(100, 100, 100)
+  doc.text(companyName, shipToX, yPosition)
+  yPosition += 5
+  companyLines.forEach(line => {
+    doc.text(line, shipToX, yPosition)
+    yPosition += 4
+  })
   
   // Line Items Table
+  yPosition = Math.max(yPosition, 130) // Ensure we have enough space
+  
   if (includeLineItems && lineItems.length > 0) {
-    yPosition += 15
-    
-    const tableData = lineItems.map(item => [
+    const tableData = lineItems.map((item, index) => [
+      (index + 1).toString(), // Item number
       item.item_description,
       item.quantity.toString(),
-      `$${parseFloat(item.unit_price).toFixed(2)}`,
-      `$${parseFloat(item.line_total).toFixed(2)}`
+      `$${parseFloat(item.unit_price.toString()).toFixed(2)}`,
+      `$${parseFloat(item.line_total.toString()).toFixed(2)}`
     ])
     
     autoTable(doc, {
       startY: yPosition,
-      head: [['Description', 'Quantity', 'Unit Price', 'Line Total']],
+      head: [['ITEM #', 'DESCRIPTION', 'QTY', 'UNIT PRICE', 'TOTAL']],
       body: tableData,
       theme: 'grid',
       headStyles: {
-        fillColor: [71, 85, 105],
-        textColor: 255,
-        fontSize: 10
+        fillColor: [240, 240, 240],
+        textColor: [33, 33, 33],
+        fontSize: 9,
+        fontStyle: 'bold',
+        halign: 'center'
       },
       bodyStyles: {
         fontSize: 9,
         textColor: [33, 33, 33]
       },
       columnStyles: {
-        0: { cellWidth: 80 },
-        1: { cellWidth: 25, halign: 'center' },
-        2: { cellWidth: 30, halign: 'right' },
-        3: { cellWidth: 35, halign: 'right' }
+        0: { cellWidth: 20, halign: 'center' },
+        1: { cellWidth: 90 },
+        2: { cellWidth: 20, halign: 'center' },
+        3: { cellWidth: 25, halign: 'right' },
+        4: { cellWidth: 25, halign: 'right' }
+      },
+      margin: { left: 20, right: 20 },
+      alternateRowStyles: {
+        fillColor: [250, 250, 250]
+      }
+    })
+    
+    // Totals section
+    const finalY = (doc as any).lastAutoTable.finalY + 15
+    const totalsX = pageWidth - 70
+    
+    // Totals box
+    doc.setDrawColor(200, 200, 200)
+    doc.setLineWidth(0.5)
+    doc.rect(totalsX - 5, finalY - 5, 65, 50)
+    
+    doc.setFontSize(10)
+    doc.setTextColor(100, 100, 100)
+    
+    // Subtotal
+    doc.text('SUBTOTAL', totalsX, finalY + 5)
+    doc.text(`$${parseFloat(purchaseOrder.subtotal?.toString() || '0').toFixed(2)}`, totalsX + 35, finalY + 5, { align: 'right' })
+    
+    // Tax (GST)
+    doc.text('TAX', totalsX, finalY + 12)
+    doc.text(`$${parseFloat(purchaseOrder.tax_amount?.toString() || '0').toFixed(2)}`, totalsX + 35, finalY + 12, { align: 'right' })
+    
+    // Shipping
+    doc.text('SHIPPING', totalsX, finalY + 19)
+    doc.text('$0.00', totalsX + 35, finalY + 19, { align: 'right' })
+    
+    // Other
+    doc.text('OTHER', totalsX, finalY + 26)
+    doc.text('$0.00', totalsX + 35, finalY + 26, { align: 'right' })
+    
+    // Total
+    doc.setFontSize(12)
+    doc.setTextColor(33, 33, 33)
+    doc.text('TOTAL', totalsX, finalY + 36)
+    doc.text(`$${parseFloat(purchaseOrder.total_amount.toString()).toFixed(2)}`, totalsX + 35, finalY + 36, { align: 'right' })
+    
+    // Comments section
+    const commentsY = finalY + 55
+    if (purchaseOrder.notes && commentsY < pageHeight - 40) {
+      doc.setFontSize(12)
+      doc.setTextColor(33, 33, 33)
+      doc.text('COMMENTS / SPECIAL INSTRUCTIONS', 20, commentsY)
+      
+      doc.setFontSize(10)
+      doc.setTextColor(100, 100, 100)
+      const splitNotes = doc.splitTextToSize(purchaseOrder.notes, pageWidth - 40)
+      doc.text(splitNotes, 20, commentsY + 8)
+    }
+  } else {
+    // If no line items, just show a placeholder table
+    autoTable(doc, {
+      startY: yPosition,
+      head: [['ITEM #', 'DESCRIPTION', 'QTY', 'UNIT PRICE', 'TOTAL']],
+      body: [['', 'No line items added', '', '', '']],
+      theme: 'grid',
+      headStyles: {
+        fillColor: [240, 240, 240],
+        textColor: [33, 33, 33],
+        fontSize: 9,
+        fontStyle: 'bold',
+        halign: 'center'
+      },
+      bodyStyles: {
+        fontSize: 9,
+        textColor: [150, 150, 150],
+        halign: 'center'
+      },
+      columnStyles: {
+        0: { cellWidth: 20 },
+        1: { cellWidth: 90 },
+        2: { cellWidth: 20 },
+        3: { cellWidth: 25 },
+        4: { cellWidth: 25 }
       },
       margin: { left: 20, right: 20 }
     })
-    
-    // Totals
-    const finalY = (doc as any).lastAutoTable.finalY + 10
-    
-    doc.setFontSize(10)
-    doc.setTextColor(100, 100, 100)
-    
-    const totalsX = pageWidth - 80
-    
-    doc.text('Subtotal:', totalsX, finalY)
-    doc.text(`$${parseFloat(purchaseOrder.subtotal?.toString() || '0').toFixed(2)}`, totalsX + 25, finalY)
-    
-    doc.text('Tax:', totalsX, finalY + 5)
-    doc.text(`$${parseFloat(purchaseOrder.tax_amount?.toString() || '0').toFixed(2)}`, totalsX + 25, finalY + 5)
-    
-    doc.setFontSize(12)
-    doc.setTextColor(33, 33, 33)
-    doc.text('Total:', totalsX, finalY + 12)
-    doc.text(`$${parseFloat(purchaseOrder.total_amount.toString()).toFixed(2)}`, totalsX + 25, finalY + 12)
-  }
-  
-  // Notes
-  if (purchaseOrder.notes) {
-    const notesY = (doc as any).lastAutoTable?.finalY ? (doc as any).lastAutoTable.finalY + 30 : yPosition + 30
-    
-    doc.setFontSize(12)
-    doc.setTextColor(33, 33, 33)
-    doc.text('Notes:', 20, notesY)
-    
-    doc.setFontSize(10)
-    doc.setTextColor(100, 100, 100)
-    const splitNotes = doc.splitTextToSize(purchaseOrder.notes, pageWidth - 40)
-    doc.text(splitNotes, 20, notesY + 8)
   }
   
   // Footer
-  const footerY = doc.internal.pageSize.height - 20
+  const footerY = pageHeight - 20
   doc.setFontSize(8)
   doc.setTextColor(150, 150, 150)
-  doc.text(`Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, pageWidth / 2, footerY, { align: 'center' })
+  doc.text(`Generated on ${new Date().toLocaleDateString('en-AU')} at ${new Date().toLocaleTimeString('en-AU')}`, pageWidth / 2, footerY, { align: 'center' })
   
   return doc
 }

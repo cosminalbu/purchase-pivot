@@ -142,9 +142,15 @@ const PurchaseOrders = () => {
     try {
       const loadingToast = toast.loading({ title: "Generating PDF..." });
       
-      // For now, use empty array - implement line items fetching later
-      const lineItems: any[] = [];
-      await downloadPurchaseOrderPDF(po, lineItems);
+      // Fetch line items for the specific purchase order
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data: lineItems } = await supabase
+        .from('purchase_order_line_items')
+        .select('*')
+        .eq('purchase_order_id', po.id)
+        .order('created_at', { ascending: true });
+      
+      await downloadPurchaseOrderPDF(po, lineItems || []);
       
       toast.dismiss(loadingToast);
       toast.success({ title: "PDF Generated Successfully" });
