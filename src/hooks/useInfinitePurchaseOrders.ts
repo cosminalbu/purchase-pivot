@@ -33,8 +33,7 @@ export const useInfinitePurchaseOrders = ({
           updated_at,
           suppliers!inner(
             id,
-            company_name,
-            contact_person
+            company_name
           )
         `)
         .order('created_at', { ascending: false })
