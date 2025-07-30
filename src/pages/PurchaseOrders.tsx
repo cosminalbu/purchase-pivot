@@ -32,6 +32,7 @@ import {
 import { usePurchaseOrders } from "@/hooks/usePurchaseOrders";
 import { CreatePurchaseOrderDialog } from "@/components/purchase-orders/CreatePurchaseOrderDialog";
 import { ViewPurchaseOrderDialog } from "@/components/purchase-orders/ViewPurchaseOrderDialog";
+import { EditPurchaseOrderDialog } from "@/components/purchase-orders/EditPurchaseOrderDialog";
 import { PurchaseOrder } from "@/lib/supabase-types";
 
 const PurchaseOrders = () => {
@@ -39,6 +40,7 @@ const PurchaseOrders = () => {
   const [statusFilter, setStatusFilter] = useState<POStatus | "all">("all");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null);
   const { purchaseOrders, loading } = usePurchaseOrders();
 
@@ -189,7 +191,13 @@ const PurchaseOrders = () => {
                           <Eye className="h-4 w-4" />
                           View Details
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="gap-2">
+                        <DropdownMenuItem 
+                          className="gap-2"
+                          onClick={() => {
+                            setSelectedPO(po);
+                            setEditDialogOpen(true);
+                          }}
+                        >
                           <Edit className="h-4 w-4" />
                           Edit
                         </DropdownMenuItem>
@@ -233,6 +241,12 @@ const PurchaseOrders = () => {
       <ViewPurchaseOrderDialog 
         open={viewDialogOpen} 
         onOpenChange={setViewDialogOpen} 
+        purchaseOrder={selectedPO}
+      />
+      
+      <EditPurchaseOrderDialog 
+        open={editDialogOpen} 
+        onOpenChange={setEditDialogOpen} 
         purchaseOrder={selectedPO}
       />
     </div>
