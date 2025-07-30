@@ -86,6 +86,40 @@ export const useSupplierContacts = (supplierId: string | null) => {
     fetchContacts();
   }, [supplierId]);
 
+  useEffect(() => {
+    if (!supplierId) return;
+
+    const channel = supabase
+      .channel('supplier-contacts-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'supplier_contacts',
+          filter: `supplier_id=eq.${supplierId}`
+        },
+        (payload) => {
+          console.log('Supplier contacts real-time update:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            setContacts(prev => [...prev, payload.new as SupplierContact]);
+          } else if (payload.eventType === 'UPDATE') {
+            setContacts(prev => prev.map(contact => 
+              contact.id === payload.new.id ? payload.new as SupplierContact : contact
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            setContacts(prev => prev.filter(contact => contact.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supplierId]);
+
   return {
     contacts,
     loading,

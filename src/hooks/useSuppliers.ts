@@ -114,6 +114,37 @@ export const useSuppliers = () => {
     fetchSuppliers();
   }, []);
 
+  useEffect(() => {
+    const channel = supabase
+      .channel('suppliers-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'suppliers'
+        },
+        (payload) => {
+          console.log('Suppliers real-time update:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            setSuppliers(prev => [...prev, payload.new as Supplier]);
+          } else if (payload.eventType === 'UPDATE') {
+            setSuppliers(prev => prev.map(supplier => 
+              supplier.id === payload.new.id ? payload.new as Supplier : supplier
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            setSuppliers(prev => prev.filter(supplier => supplier.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   return {
     suppliers,
     loading,

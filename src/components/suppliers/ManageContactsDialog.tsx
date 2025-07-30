@@ -52,12 +52,14 @@ export const ManageContactsDialog = ({ supplier, open, onOpenChange }: ManageCon
               <Users className="h-5 w-5" />
               Manage Contacts - {supplier.company_name}
             </DialogTitle>
-            <div className="mt-4">
-              <Button onClick={() => setShowAddForm(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Contact
-              </Button>
-            </div>
+            {contacts.length > 0 && (
+              <div className="mt-4">
+                <Button onClick={() => setShowAddForm(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Contact
+                </Button>
+              </div>
+            )}
           </DialogHeader>
           
           <div className="space-y-4">
