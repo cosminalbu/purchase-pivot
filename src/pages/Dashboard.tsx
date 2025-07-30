@@ -13,12 +13,26 @@ import {
   Edit,
   MoreHorizontal
 } from "lucide-react";
-import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { useDashboardStatsQuery } from "@/hooks/useDashboardStatsQuery";
 import { usePurchaseOrders } from "@/hooks/usePurchaseOrders";
+import { useEnhancedToast } from "@/hooks/useEnhancedToast";
 
 const Dashboard = () => {
-  const { stats, loading: statsLoading } = useDashboardStats();
+  const { data: stats, isLoading: statsLoading, error } = useDashboardStatsQuery();
   const { purchaseOrders, loading: posLoading } = usePurchaseOrders();
+  const toast = useEnhancedToast();
+
+  // Show error toast if query fails
+  if (error) {
+    toast.error({
+      title: "Error loading dashboard",
+      description: "Failed to load dashboard statistics",
+      action: {
+        label: "Retry",
+        onClick: () => window.location.reload()
+      }
+    });
+  }
 
   // Get recent POs (last 4)
   const recentPOs = purchaseOrders.slice(0, 4);
@@ -50,7 +64,7 @@ const Dashboard = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <DashboardCard
           title="Total Purchase Orders"
-          value={stats.totalPOs}
+          value={statsLoading ? "..." : stats?.totalPOs.toString() || "0"}
           change="+12% from last month"
           trend="up"
           icon={<FileText className="h-4 w-4" />}
@@ -58,7 +72,7 @@ const Dashboard = () => {
         />
         <DashboardCard
           title="Pending Approval"
-          value={stats.pendingApproval}
+          value={statsLoading ? "..." : stats?.pendingApproval.toString() || "0"}
           change="3 urgent"
           trend="neutral"
           icon={<Clock className="h-4 w-4" />}
@@ -66,7 +80,7 @@ const Dashboard = () => {
         />
         <DashboardCard
           title="Total Value (YTD)"
-          value={formatCurrency(stats.totalValue)}
+          value={statsLoading ? "..." : formatCurrency(stats?.totalValue || 0)}
           change="+8% from last year"
           trend="up"
           icon={<DollarSign className="h-4 w-4" />}
@@ -74,7 +88,7 @@ const Dashboard = () => {
         />
         <DashboardCard
           title="Active Suppliers"
-          value={stats.activeSuppliers}
+          value={statsLoading ? "..." : stats?.activeSuppliers.toString() || "0"}
           change="+2 this month"
           trend="up"
           icon={<Users className="h-4 w-4" />}
@@ -206,7 +220,7 @@ const Dashboard = () => {
                   ))}
                   <Skeleton className="h-8 w-full" />
                 </div>
-              ) : stats.pendingApproval === 0 ? (
+              ) : (stats?.pendingApproval || 0) === 0 ? (
                 <div className="text-center py-4">
                   <p className="text-muted-foreground">No pending approvals</p>
                 </div>
@@ -225,7 +239,7 @@ const Dashboard = () => {
                       </div>
                     ))}
                   <Button variant="outline" className="w-full text-sm">
-                    Review All ({stats.pendingApproval})
+                    Review All ({stats?.pendingApproval || 0})
                   </Button>
                 </div>
               )}
