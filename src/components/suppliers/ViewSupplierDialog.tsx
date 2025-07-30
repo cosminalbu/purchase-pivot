@@ -28,13 +28,15 @@ export const ViewSupplierDialog = ({ supplier, open, onOpenChange }: ViewSupplie
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
+        <DialogHeader className="pr-8">
+          <DialogTitle className="text-left">
             {supplier.company_name}
+          </DialogTitle>
+          <div className="mt-2">
             <Badge variant={supplier.status === 'active' ? 'default' : 'secondary'}>
               {supplier.status}
             </Badge>
-          </DialogTitle>
+          </div>
         </DialogHeader>
         
         <div className="grid gap-6">

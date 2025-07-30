@@ -47,17 +47,17 @@ export const ManageContactsDialog = ({ supplier, open, onOpenChange }: ManageCon
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Manage Contacts - {supplier.company_name}
-              </div>
+          <DialogHeader className="pr-8">
+            <DialogTitle className="flex items-center gap-2 text-left">
+              <Users className="h-5 w-5" />
+              Manage Contacts - {supplier.company_name}
+            </DialogTitle>
+            <div className="mt-4">
               <Button onClick={() => setShowAddForm(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Contact
               </Button>
-            </DialogTitle>
+            </div>
           </DialogHeader>
           
           <div className="space-y-4">
