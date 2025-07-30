@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -17,165 +16,82 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { 
-  Plus, 
-  Search, 
-  Phone,
-  Mail,
-  Globe,
-  MapPin,
-  Eye,
-  Edit,
-  Trash2,
-  MoreHorizontal,
-  Users,
-  Building
-} from "lucide-react";
+import { MoreHorizontal, Search, Users, Contact } from "lucide-react";
+import { useSuppliers } from "@/hooks/useSuppliers";
+import { AddSupplierForm } from "@/components/forms/AddSupplierForm";
 
-// Mock data
-const mockSuppliers = [
-  {
-    id: "SUP-001",
-    companyName: "TechCorp Solutions",
-    abn: "12 345 678 901",
-    address: "123 Tech Street, Sydney NSW 2000",
-    phone: "+61 2 9876 5432",
-    fax: "+61 2 9876 5433", 
-    email: "orders@techcorp.com.au",
-    website: "www.techcorp.com.au",
-    contactCount: 3,
-    recentPOs: 5,
-    totalValue: 45200.00,
-    status: "active"
-  },
-  {
-    id: "SUP-002",
-    companyName: "Office Supplies Co",
-    abn: "98 765 432 109",
-    address: "456 Office Ave, Melbourne VIC 3000",
-    phone: "+61 3 8765 4321",
-    fax: "+61 3 8765 4322",
-    email: "sales@officesupplies.com.au", 
-    website: "www.officesupplies.com.au",
-    contactCount: 2,
-    recentPOs: 12,
-    totalValue: 15650.75,
-    status: "active"
-  },
-  {
-    id: "SUP-003",
-    companyName: "Industrial Parts Ltd",
-    abn: "55 123 987 654",
-    address: "789 Industrial Rd, Perth WA 6000",
-    phone: "+61 8 6543 2109",
-    fax: "+61 8 6543 2110",
-    email: "procurement@industrialparts.com.au",
-    website: "www.industrialparts.com.au",
-    contactCount: 4,
-    recentPOs: 8,
-    totalValue: 89340.50,
-    status: "active"
-  },
-  {
-    id: "SUP-004",
-    companyName: "Software Licensing Inc",
-    abn: "44 987 321 654",
-    address: "321 Software Plaza, Brisbane QLD 4000",
-    phone: "+61 7 3456 7890",
-    fax: "",
-    email: "licensing@softwareinc.com.au",
-    website: "www.softwareinc.com.au",
-    contactCount: 1,
-    recentPOs: 3,
-    totalValue: 25800.00,
-    status: "active"
-  },
-];
+// Helper function to format currency
+const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat('en-AU', {
+    style: 'currency',
+    currency: 'AUD',
+  }).format(amount);
+};
 
 const Suppliers = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const { suppliers, loading } = useSuppliers();
 
-  const filteredSuppliers = mockSuppliers.filter(supplier =>
-    supplier.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supplier.abn.includes(searchTerm) ||
-    supplier.email.toLowerCase().includes(searchTerm.toLowerCase())
+  // Filter suppliers based on search term
+  const filteredSuppliers = suppliers.filter(supplier =>
+    supplier.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (supplier.email && supplier.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-AU', {
-      style: 'currency',
-      currency: 'AUD'
-    }).format(amount);
-  };
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Suppliers</h1>
-          <p className="text-muted-foreground">
-            Manage your supplier database and contacts
-          </p>
+          <p className="text-muted-foreground">Manage your supplier relationships</p>
         </div>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          Add Supplier
-        </Button>
+        <AddSupplierForm />
       </div>
 
-      {/* Search and Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card className="md:col-span-2">
-          <CardContent className="pt-6">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search suppliers by name, ABN, or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
+      {/* Summary Cards */}
+      <div className="grid gap-4 md:grid-cols-2">
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2">
-              <Building className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-2xl font-bold">{mockSuppliers.length}</p>
-                <p className="text-xs text-muted-foreground">Total Suppliers</p>
-              </div>
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Suppliers
+            </CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-foreground">{loading ? "..." : suppliers.length}</div>
           </CardContent>
         </Card>
-
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2">
-              <Users className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-2xl font-bold">
-                  {mockSuppliers.reduce((acc, sup) => acc + sup.contactCount, 0)}
-                </p>
-                <p className="text-xs text-muted-foreground">Total Contacts</p>
-              </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Active Suppliers
+            </CardTitle>
+            <Contact className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-foreground">
+              {loading ? "..." : suppliers.filter(s => s.status === 'active').length}
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Search */}
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+        <Input
+          placeholder="Search suppliers..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
       </div>
 
       {/* Suppliers Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            Supplier Directory
-            <Badge variant="secondary">
-              {filteredSuppliers.length} suppliers
-            </Badge>
-          </CardTitle>
+          <CardTitle>Suppliers</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -185,82 +101,59 @@ const Suppliers = () => {
                 <TableHead>ABN</TableHead>
                 <TableHead>Contact Info</TableHead>
                 <TableHead>Location</TableHead>
-                <TableHead>Contacts</TableHead>
-                <TableHead>Recent POs</TableHead>
-                <TableHead>Total Value</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredSuppliers.map((supplier) => (
-                <TableRow key={supplier.id} className="hover:bg-accent">
-                  <TableCell>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-4">
+                    Loading suppliers...
+                  </TableCell>
+                </TableRow>
+              ) : filteredSuppliers.map((supplier) => (
+                <TableRow key={supplier.id}>
+                  <TableCell className="font-medium">
                     <div>
-                      <p className="font-medium text-foreground">{supplier.companyName}</p>
-                      {supplier.website && (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                          <Globe className="h-3 w-3" />
-                          <span>{supplier.website}</span>
-                        </div>
+                      <div className="font-semibold">{supplier.company_name}</div>
+                      {supplier.email && (
+                        <div className="text-sm text-muted-foreground">{supplier.email}</div>
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="font-mono text-sm">{supplier.abn}</TableCell>
+                  <TableCell>{supplier.abn || "—"}</TableCell>
                   <TableCell>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1 text-xs">
-                        <Phone className="h-3 w-3 text-muted-foreground" />
-                        <span>{supplier.phone}</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-xs">
-                        <Mail className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-primary hover:underline cursor-pointer">
-                          {supplier.email}
-                        </span>
-                      </div>
+                    <div>
+                      {supplier.phone && (
+                        <div className="text-sm">{supplier.phone}</div>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-start gap-1 text-xs text-muted-foreground max-w-48">
-                      <MapPin className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                      <span>{supplier.address}</span>
-                    </div>
+                    {[supplier.city, supplier.state].filter(Boolean).join(", ") || "—"}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">
-                      {supplier.contactCount} contacts
-                    </Badge>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      supplier.status === 'active' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {supplier.status.charAt(0).toUpperCase() + supplier.status.slice(1)}
+                    </span>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary">
-                      {supplier.recentPOs} POs
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="font-semibold">
-                    {formatCurrency(supplier.totalValue)}
-                  </TableCell>
-                  <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" className="h-8 w-8 p-0">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem className="gap-2">
-                          <Eye className="h-4 w-4" />
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="gap-2">
-                          <Edit className="h-4 w-4" />
-                          Edit Supplier
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="gap-2">
-                          <Users className="h-4 w-4" />
-                          Manage Contacts
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="gap-2 text-destructive">
-                          <Trash2 className="h-4 w-4" />
+                        <DropdownMenuItem>View Details</DropdownMenuItem>
+                        <DropdownMenuItem>Edit</DropdownMenuItem>
+                        <DropdownMenuItem>Manage Contacts</DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive">
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -268,19 +161,21 @@ const Suppliers = () => {
                   </TableCell>
                 </TableRow>
               ))}
+              {!loading && filteredSuppliers.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8">
+                    <div className="flex flex-col items-center gap-2">
+                      <Users className="h-8 w-8 text-muted-foreground" />
+                      <p className="text-muted-foreground">
+                        {searchTerm ? "No suppliers found matching your search" : "No suppliers found"}
+                      </p>
+                      {!searchTerm && <AddSupplierForm />}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
-
-          {filteredSuppliers.length === 0 && (
-            <div className="text-center py-8">
-              <Building className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">No suppliers found</h3>
-              <p className="text-muted-foreground mb-4">
-                Try adjusting your search criteria
-              </p>
-              <Button>Add your first supplier</Button>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>

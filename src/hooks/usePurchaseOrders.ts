@@ -1,0 +1,140 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { PurchaseOrder, PurchaseOrderLineItem } from '@/lib/supabase-types';
+import { useToast } from '@/hooks/use-toast';
+
+export const usePurchaseOrders = () => {
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  const fetchPurchaseOrders = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('purchase_orders')
+        .select(`
+          *,
+          supplier:suppliers(*)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setPurchaseOrders(data || []);
+    } catch (error) {
+      console.error('Error fetching purchase orders:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load purchase orders",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addPurchaseOrder = async (po: Omit<PurchaseOrder, 'id' | 'created_at' | 'updated_at' | 'po_number'>) => {
+    try {
+      // Get the next PO number
+      const { data: poNumber, error: fnError } = await supabase
+        .rpc('generate_po_number');
+
+      if (fnError) throw fnError;
+
+      const { data, error } = await supabase
+        .from('purchase_orders')
+        .insert([{ ...po, po_number: poNumber }])
+        .select(`
+          *,
+          supplier:suppliers(*)
+        `)
+        .single();
+
+      if (error) throw error;
+      
+      setPurchaseOrders(prev => [data, ...prev]);
+      toast({
+        title: "Success",
+        description: "Purchase order created successfully",
+      });
+      return data;
+    } catch (error) {
+      console.error('Error adding purchase order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create purchase order",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const updatePurchaseOrder = async (id: string, updates: Partial<PurchaseOrder>) => {
+    try {
+      const { data, error } = await supabase
+        .from('purchase_orders')
+        .update(updates)
+        .eq('id', id)
+        .select(`
+          *,
+          supplier:suppliers(*)
+        `)
+        .single();
+
+      if (error) throw error;
+      
+      setPurchaseOrders(prev => prev.map(po => po.id === id ? data : po));
+      toast({
+        title: "Success",
+        description: "Purchase order updated successfully",
+      });
+      return data;
+    } catch (error) {
+      console.error('Error updating purchase order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update purchase order",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const deletePurchaseOrder = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('purchase_orders')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      setPurchaseOrders(prev => prev.filter(po => po.id !== id));
+      toast({
+        title: "Success",
+        description: "Purchase order deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting purchase order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete purchase order",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  useEffect(() => {
+    fetchPurchaseOrders();
+  }, []);
+
+  return {
+    purchaseOrders,
+    loading,
+    addPurchaseOrder,
+    updatePurchaseOrder,
+    deletePurchaseOrder,
+    refetch: fetchPurchaseOrders
+  };
+};

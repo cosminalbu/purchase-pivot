@@ -12,51 +12,23 @@ import {
   Edit,
   MoreHorizontal
 } from "lucide-react";
-
-// Mock data - will be replaced with real data later
-const mockStats = {
-  totalPOs: 127,
-  pendingApproval: 8,
-  totalValue: "$847,230",
-  activeSuppliers: 45,
-};
-
-const mockRecentPOs = [
-  {
-    id: "PO-2024-001",
-    supplier: "TechCorp Solutions",
-    value: "$12,450",
-    status: "pending" as POStatus,
-    date: "2024-01-15",
-    requiredBy: "2024-01-25"
-  },
-  {
-    id: "PO-2024-002", 
-    supplier: "Office Supplies Co",
-    value: "$890",
-    status: "approved" as POStatus,
-    date: "2024-01-14",
-    requiredBy: "2024-01-20"
-  },
-  {
-    id: "PO-2024-003",
-    supplier: "Industrial Parts Ltd",
-    value: "$25,600",
-    status: "sent" as POStatus,
-    date: "2024-01-13",
-    requiredBy: "2024-01-30"
-  },
-  {
-    id: "PO-2024-004",
-    supplier: "Software Licensing Inc",
-    value: "$8,200",
-    status: "received" as POStatus,
-    date: "2024-01-12",
-    requiredBy: "2024-01-18"
-  },
-];
+import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { usePurchaseOrders } from "@/hooks/usePurchaseOrders";
 
 const Dashboard = () => {
+  const { stats, loading: statsLoading } = useDashboardStats();
+  const { purchaseOrders, loading: posLoading } = usePurchaseOrders();
+
+  // Get recent POs (last 4)
+  const recentPOs = purchaseOrders.slice(0, 4);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-AU', {
+      style: 'currency',
+      currency: 'AUD'
+    }).format(amount);
+  };
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -77,28 +49,28 @@ const Dashboard = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <DashboardCard
           title="Total Purchase Orders"
-          value={mockStats.totalPOs}
+          value={statsLoading ? "..." : stats.totalPOs}
           change="+12% from last month"
           trend="up"
           icon={<FileText className="h-4 w-4" />}
         />
         <DashboardCard
           title="Pending Approval"
-          value={mockStats.pendingApproval}
+          value={statsLoading ? "..." : stats.pendingApproval}
           change="3 urgent"
           trend="neutral"
           icon={<Clock className="h-4 w-4" />}
         />
         <DashboardCard
           title="Total Value (YTD)"
-          value={mockStats.totalValue}
+          value={statsLoading ? "..." : formatCurrency(stats.totalValue)}
           change="+8% from last year"
           trend="up"
           icon={<DollarSign className="h-4 w-4" />}
         />
         <DashboardCard
           title="Active Suppliers"
-          value={mockStats.activeSuppliers}
+          value={statsLoading ? "..." : stats.activeSuppliers}
           change="+2 this month"
           trend="up"
           icon={<Users className="h-4 w-4" />}
@@ -117,40 +89,52 @@ const Dashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {mockRecentPOs.map((po) => (
-                <div
-                  key={po.id}
-                  className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent transition-colors"
-                >
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center space-x-3">
-                      <span className="font-medium text-foreground">{po.id}</span>
-                      <StatusBadge status={po.status} />
+            {posLoading ? (
+              <div className="text-center py-4">Loading recent purchase orders...</div>
+            ) : recentPOs.length === 0 ? (
+              <div className="text-center py-8">
+                <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">No purchase orders yet</p>
+                <Button className="mt-2">Create your first purchase order</Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {recentPOs.map((po) => (
+                  <div
+                    key={po.id}
+                    className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent transition-colors"
+                  >
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center space-x-3">
+                        <span className="font-medium text-foreground">{po.po_number}</span>
+                        <StatusBadge status={po.status as POStatus} />
+                      </div>
+                      <p className="text-sm text-muted-foreground">{po.supplier?.company_name || "—"}</p>
+                      <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                        <span>Created: {new Date(po.created_at).toLocaleDateString()}</span>
+                        {po.delivery_date && (
+                          <span>Required: {new Date(po.delivery_date).toLocaleDateString()}</span>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">{po.supplier}</p>
-                    <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                      <span>Created: {po.date}</span>
-                      <span>Required: {po.requiredBy}</span>
+                    <div className="text-right space-y-1">
+                      <p className="font-semibold text-foreground">{formatCurrency(po.total_amount)}</p>
+                      <div className="flex items-center space-x-1">
+                        <Button variant="ghost" size="sm">
+                          <Eye className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="sm">
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right space-y-1">
-                    <p className="font-semibold text-foreground">{po.value}</p>
-                    <div className="flex items-center space-x-1">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="h-3 w-3" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -183,25 +167,31 @@ const Dashboard = () => {
               <CardTitle>Approval Queue</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-muted rounded-md">
-                  <div>
-                    <p className="font-medium text-sm">PO-2024-001</p>
-                    <p className="text-xs text-muted-foreground">$12,450</p>
-                  </div>
-                  <StatusBadge status="pending" />
+              {statsLoading ? (
+                <div className="text-center py-4">Loading...</div>
+              ) : stats.pendingApproval === 0 ? (
+                <div className="text-center py-4">
+                  <p className="text-muted-foreground">No pending approvals</p>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-muted rounded-md">
-                  <div>
-                    <p className="font-medium text-sm">PO-2024-005</p>
-                    <p className="text-xs text-muted-foreground">$3,200</p>
-                  </div>
-                  <StatusBadge status="pending" />
+              ) : (
+                <div className="space-y-3">
+                  {purchaseOrders
+                    .filter(po => po.status === 'pending')
+                    .slice(0, 2)
+                    .map((po) => (
+                      <div key={po.id} className="flex items-center justify-between p-3 bg-muted rounded-md">
+                        <div>
+                          <p className="font-medium text-sm">{po.po_number}</p>
+                          <p className="text-xs text-muted-foreground">{formatCurrency(po.total_amount)}</p>
+                        </div>
+                        <StatusBadge status={po.status as POStatus} />
+                      </div>
+                    ))}
+                  <Button variant="outline" className="w-full text-sm">
+                    Review All ({stats.pendingApproval})
+                  </Button>
                 </div>
-                <Button variant="outline" className="w-full text-sm">
-                  Review All ({mockStats.pendingApproval})
-                </Button>
-              </div>
+              )}
             </CardContent>
           </Card>
         </div>

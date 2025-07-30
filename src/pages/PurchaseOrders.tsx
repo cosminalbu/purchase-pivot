@@ -29,76 +29,24 @@ import {
   MoreHorizontal,
   FileText
 } from "lucide-react";
-
-// Mock data
-const mockPurchaseOrders = [
-  {
-    id: "PO-2024-001",
-    supplier: "TechCorp Solutions",
-    contact: "John Smith",
-    amount: 12450.00,
-    status: "pending" as POStatus,
-    date: "2024-01-15",
-    requiredBy: "2024-01-25",
-    lineItems: 3
-  },
-  {
-    id: "PO-2024-002",
-    supplier: "Office Supplies Co",
-    contact: "Sarah Johnson", 
-    amount: 890.50,
-    status: "approved" as POStatus,
-    date: "2024-01-14",
-    requiredBy: "2024-01-20",
-    lineItems: 8
-  },
-  {
-    id: "PO-2024-003",
-    supplier: "Industrial Parts Ltd",
-    contact: "Mike Chen",
-    amount: 25600.00,
-    status: "sent" as POStatus,
-    date: "2024-01-13",
-    requiredBy: "2024-01-30",
-    lineItems: 12
-  },
-  {
-    id: "PO-2024-004",
-    supplier: "Software Licensing Inc",
-    contact: "Emma Davis",
-    amount: 8200.00,
-    status: "received" as POStatus,
-    date: "2024-01-12",
-    requiredBy: "2024-01-18",
-    lineItems: 2
-  },
-  {
-    id: "PO-2024-005",
-    supplier: "Maintenance Services Pro",
-    contact: "Alex Rodriguez",
-    amount: 3450.75,
-    status: "completed" as POStatus,
-    date: "2024-01-10",
-    requiredBy: "2024-01-15",
-    lineItems: 5
-  },
-];
+import { usePurchaseOrders } from "@/hooks/usePurchaseOrders";
 
 const PurchaseOrders = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<POStatus | "all">("all");
+  const { purchaseOrders, loading } = usePurchaseOrders();
 
-  const filteredPOs = mockPurchaseOrders.filter(po => {
-    const matchesSearch = po.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         po.supplier.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredPOs = purchaseOrders.filter(po => {
+    const matchesSearch = po.po_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (po.supplier?.company_name || "").toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || po.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-AU', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'AUD'
     }).format(amount);
   };
 
@@ -150,19 +98,16 @@ const PurchaseOrders = () => {
                     Draft
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setStatusFilter("pending")}>
-                    Pending Approval
+                    Pending
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setStatusFilter("approved")}>
                     Approved
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setStatusFilter("sent")}>
-                    Sent
+                  <DropdownMenuItem onClick={() => setStatusFilter("delivered")}>
+                    Delivered
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setStatusFilter("received")}>
-                    Received
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setStatusFilter("completed")}>
-                    Completed
+                  <DropdownMenuItem onClick={() => setStatusFilter("cancelled")}>
+                    Cancelled
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -182,7 +127,7 @@ const PurchaseOrders = () => {
           <CardTitle className="flex items-center justify-between">
             Purchase Orders
             <Badge variant="secondary">
-              {filteredPOs.length} of {mockPurchaseOrders.length}
+              {loading ? "..." : `${filteredPOs.length} of ${purchaseOrders.length}`}
             </Badge>
           </CardTitle>
         </CardHeader>
@@ -192,29 +137,33 @@ const PurchaseOrders = () => {
               <TableRow>
                 <TableHead>PO Number</TableHead>
                 <TableHead>Supplier</TableHead>
-                <TableHead>Contact</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Date Created</TableHead>
-                <TableHead>Required By</TableHead>
-                <TableHead>Items</TableHead>
+                <TableHead>Order Date</TableHead>
+                <TableHead>Delivery Date</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredPOs.map((po) => (
-                <TableRow key={po.id} className="hover:bg-accent">
-                  <TableCell className="font-medium">{po.id}</TableCell>
-                  <TableCell>{po.supplier}</TableCell>
-                  <TableCell className="text-muted-foreground">{po.contact}</TableCell>
-                  <TableCell className="font-semibold">{formatCurrency(po.amount)}</TableCell>
-                  <TableCell>
-                    <StatusBadge status={po.status} />
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-4">
+                    Loading purchase orders...
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{po.date}</TableCell>
-                  <TableCell className="text-muted-foreground">{po.requiredBy}</TableCell>
+                </TableRow>
+              ) : filteredPOs.map((po) => (
+                <TableRow key={po.id} className="hover:bg-accent">
+                  <TableCell className="font-medium">{po.po_number}</TableCell>
+                  <TableCell>{po.supplier?.company_name || "—"}</TableCell>
+                  <TableCell className="font-semibold">{formatCurrency(po.total_amount)}</TableCell>
                   <TableCell>
-                    <Badge variant="outline">{po.lineItems} items</Badge>
+                    <StatusBadge status={po.status as POStatus} />
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {po.order_date ? new Date(po.order_date).toLocaleDateString() : "—"}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {po.delivery_date ? new Date(po.delivery_date).toLocaleDateString() : "—"}
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
@@ -248,12 +197,15 @@ const PurchaseOrders = () => {
             </TableBody>
           </Table>
 
-          {filteredPOs.length === 0 && (
+          {!loading && filteredPOs.length === 0 && (
             <div className="text-center py-8">
               <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No purchase orders found</h3>
               <p className="text-muted-foreground mb-4">
-                Try adjusting your search or filter criteria
+                {searchTerm || statusFilter !== "all" 
+                  ? "Try adjusting your search or filter criteria"
+                  : "Create your first purchase order to get started"
+                }
               </p>
               <Button>Create your first purchase order</Button>
             </div>
