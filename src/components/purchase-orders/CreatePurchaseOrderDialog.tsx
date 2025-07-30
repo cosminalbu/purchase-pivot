@@ -44,7 +44,7 @@ import { supabase } from "@/integrations/supabase/client";
 const purchaseOrderSchema = z.object({
   supplier_id: z.string().min(1, "Supplier is required"),
   order_date: z.date().optional(),
-  delivery_date: z.date().optional(),
+  required_date: z.date().optional(),
   notes: z.string().optional(),
 });
 
@@ -66,6 +66,7 @@ export const CreatePurchaseOrderDialog = ({ open, onOpenChange }: CreatePurchase
     resolver: zodResolver(purchaseOrderSchema),
     defaultValues: {
       supplier_id: "",
+      order_date: new Date(),
       notes: "",
     },
   });
@@ -96,7 +97,7 @@ export const CreatePurchaseOrderDialog = ({ open, onOpenChange }: CreatePurchase
         total_amount,
         currency: 'AUD',
         order_date: data.order_date ? format(data.order_date, 'yyyy-MM-dd') : null,
-        delivery_date: data.delivery_date ? format(data.delivery_date, 'yyyy-MM-dd') : null,
+        delivery_date: data.required_date ? format(data.required_date, 'yyyy-MM-dd') : null,
         notes: data.notes || null,
       };
 
@@ -190,57 +191,56 @@ export const CreatePurchaseOrderDialog = ({ open, onOpenChange }: CreatePurchase
                 )}
               />
 
-              <div className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="order_date"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Order Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) =>
-                              date < new Date("1900-01-01")
-                            }
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="order_date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Order Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date < new Date("1900-01-01")
+                          }
+                          initialFocus
+                          className="p-3 pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             <FormField
               control={form.control}
-              name="delivery_date"
+              name="required_date"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel>Delivery Date</FormLabel>
+                  <FormLabel>Required Date</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
@@ -269,6 +269,7 @@ export const CreatePurchaseOrderDialog = ({ open, onOpenChange }: CreatePurchase
                           date < new Date()
                         }
                         initialFocus
+                        className="p-3 pointer-events-auto"
                       />
                     </PopoverContent>
                   </Popover>
