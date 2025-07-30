@@ -235,7 +235,7 @@ const PurchaseOrders = () => {
                     'Status': po.status,
                     'Amount': po.total_amount,
                     'Order Date': po.order_date || '',
-                    'Delivery Date': po.expected_delivery_date || '',
+                    'Delivery Date': po.delivery_date || '',
                     'Created': po.created_at
                   }));
                   
@@ -323,7 +323,7 @@ const PurchaseOrders = () => {
                       />
                       <MobileCardField 
                         label="Delivery Date" 
-                        value={po.expected_delivery_date ? new Date(po.expected_delivery_date).toLocaleDateString() : "—"} 
+                        value={po.delivery_date ? new Date(po.delivery_date).toLocaleDateString() : "—"} 
                       />
                     </div>
 
@@ -419,7 +419,7 @@ const PurchaseOrders = () => {
                           {po.order_date ? new Date(po.order_date).toLocaleDateString() : "—"}
                         </TableCell>
                         <TableCell className="text-muted-foreground">
-                          {po.expected_delivery_date ? new Date(po.expected_delivery_date).toLocaleDateString() : "—"}
+                          {po.delivery_date ? new Date(po.delivery_date).toLocaleDateString() : "—"}
                         </TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>

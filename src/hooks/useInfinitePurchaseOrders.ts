@@ -27,7 +27,7 @@ export const useInfinitePurchaseOrders = ({
           total_amount,
           status,
           order_date,
-          expected_delivery_date,
+          delivery_date,
           notes,
           created_at,
           updated_at,
