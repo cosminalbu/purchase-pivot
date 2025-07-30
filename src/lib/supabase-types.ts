@@ -62,7 +62,7 @@ export interface Profile {
   email: string;
   first_name: string;
   last_name: string;
-  role: 'admin' | 'manager' | 'employee' | 'viewer';
+  role: 'admin' | 'manager' | 'employee' | 'viewer' | 'pending';
   department: string | null;
   phone: string | null;
   is_active: boolean;

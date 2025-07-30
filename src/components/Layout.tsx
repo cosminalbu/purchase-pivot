@@ -18,6 +18,7 @@ import {
 import logo from "@/assets/logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import PendingApproval from "@/pages/PendingApproval";
 
 interface LayoutProps {
   children: ReactNode;
@@ -28,13 +29,27 @@ const Layout = ({ children }: LayoutProps) => {
   const { profile, signOut } = useAuth();
   const { toast } = useToast();
 
-  const navigation = [
-    { name: "Dashboard", href: "/", icon: BarChart3 },
-    { name: "Purchase Orders", href: "/purchase-orders", icon: FileText },
-    { name: "Suppliers", href: "/suppliers", icon: Users },
-    { name: "Inventory", href: "/inventory", icon: ShoppingCart },
-    { name: "Reports", href: "/reports", icon: BarChart3 },
-  ];
+  // Show pending approval page for pending users
+  if (profile?.role === 'pending') {
+    return <PendingApproval />;
+  }
+
+  const getNavigation = () => {
+    const baseNavigation = [
+      { name: "Dashboard", href: "/", icon: BarChart3 },
+      { name: "Purchase Orders", href: "/purchase-orders", icon: FileText },
+      { name: "Suppliers", href: "/suppliers", icon: Users },
+    ];
+
+    // Add admin-only navigation
+    if (profile?.role === 'admin') {
+      baseNavigation.push({ name: "User Management", href: "/users", icon: Settings });
+    }
+
+    return baseNavigation;
+  };
+
+  const navigation = getNavigation();
 
   const isActive = (href: string) => {
     if (href === "/") return location.pathname === "/";

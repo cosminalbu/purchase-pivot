@@ -23,7 +23,6 @@ const signupSchema = z.object({
   confirmPassword: z.string(),
   first_name: z.string().min(1, 'First name is required'),
   last_name: z.string().min(1, 'Last name is required'),
-  role: z.enum(['admin', 'manager', 'employee', 'viewer']).default('employee'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Passwords do not match',
   path: ['confirmPassword'],
@@ -44,9 +43,6 @@ const Auth: React.FC = () => {
 
   const signupForm = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
-    defaultValues: {
-      role: 'employee',
-    },
   });
 
   // Redirect if already authenticated
@@ -84,7 +80,6 @@ const Auth: React.FC = () => {
     const { error } = await signUp(data.email, data.password, {
       first_name: data.first_name,
       last_name: data.last_name,
-      role: data.role,
     });
     
     if (error) {
@@ -96,7 +91,7 @@ const Auth: React.FC = () => {
     } else {
       toast({
         title: "Account Created!",
-        description: "Please check your email to confirm your account.",
+        description: "Account created successfully. Please wait for admin approval to access the system.",
       });
     }
     
@@ -208,28 +203,6 @@ const Auth: React.FC = () => {
                   )}
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="role">Role</Label>
-                  <Select 
-                    value={signupForm.watch('role')} 
-                    onValueChange={(value) => signupForm.setValue('role', value as any)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select your role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="employee">Employee</SelectItem>
-                      <SelectItem value="manager">Manager</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="viewer">Viewer</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {signupForm.formState.errors.role && (
-                    <p className="text-sm text-destructive">
-                      {signupForm.formState.errors.role.message}
-                    </p>
-                  )}
-                </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="signup-password">Password</Label>

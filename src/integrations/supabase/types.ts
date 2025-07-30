@@ -260,6 +260,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_user_role: {
+        Args: { user_id: string }
+        Returns: string
+      }
     }
     Enums: {
       purchase_order_status:
@@ -269,7 +273,7 @@ export type Database = {
         | "delivered"
         | "cancelled"
       supplier_status: "active" | "inactive"
-      user_roles: "admin" | "manager" | "employee" | "viewer"
+      user_roles: "admin" | "manager" | "employee" | "viewer" | "pending"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -405,7 +409,7 @@ export const Constants = {
         "cancelled",
       ],
       supplier_status: ["active", "inactive"],
-      user_roles: ["admin", "manager", "employee", "viewer"],
+      user_roles: ["admin", "manager", "employee", "viewer", "pending"],
     },
   },
 } as const
