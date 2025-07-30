@@ -4,6 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import StatusBadge, { POStatus } from "@/components/StatusBadge";
+import { SkeletonTable } from "@/components/ui/skeleton-table";
+import { MobileCard, MobileCardField } from "@/components/ui/mobile-card";
+import { EnhancedSearch } from "@/components/ui/enhanced-search";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Table,
   TableBody,
@@ -48,15 +52,49 @@ const PurchaseOrders = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [voidDialogOpen, setVoidDialogOpen] = useState(false);
   const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null);
+  const [activeFilters, setActiveFilters] = useState<any[]>([]);
   const { purchaseOrders, loading, deletePurchaseOrder, voidPurchaseOrder } = usePurchaseOrders();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
+  // Enhanced filtering with active filters
   const filteredPOs = purchaseOrders.filter(po => {
     const matchesSearch = po.po_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (po.supplier?.company_name || "").toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || po.status === statusFilter;
-    return matchesSearch && matchesStatus;
+
+    // Apply active filters
+    const matchesActiveFilters = activeFilters.every(filter => {
+      switch (filter.key) {
+        case 'status':
+          return po.status === filter.value;
+        case 'supplier':
+          return po.supplier?.company_name === filter.value;
+        default:
+          return true;
+      }
+    });
+
+    return matchesSearch && matchesStatus && matchesActiveFilters;
   });
+
+  // Filter options for enhanced search
+  const filterOptions = [
+    {
+      key: 'status',
+      label: 'Status',
+      type: 'select' as const,
+      options: [
+        { value: 'draft', label: 'Draft' },
+        { value: 'pending', label: 'Pending' },
+        { value: 'approved', label: 'Approved' },
+        { value: 'sent', label: 'Sent' },
+        { value: 'received', label: 'Received' },
+        { value: 'completed', label: 'Completed' },
+        { value: 'voided', label: 'Voided' }
+      ]
+    }
+  ];
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-AU', {
@@ -112,22 +150,20 @@ const PurchaseOrders = () => {
         </Button>
       </div>
 
-      {/* Filters and Search */}
+      {/* Enhanced Search and Filters */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  placeholder="Search by PO number or supplier..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            
+          <EnhancedSearch
+            placeholder="Search by PO number, supplier, or description..."
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            filters={filterOptions}
+            activeFilters={activeFilters}
+            onFilterChange={setActiveFilters}
+          />
+
+          {/* Legacy Filter Controls for Status (keeping for now) */}
+          <div className="flex flex-col sm:flex-row gap-4 mt-4">
             <div className="flex gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -216,103 +252,217 @@ const PurchaseOrders = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>PO Number</TableHead>
-                <TableHead>Supplier</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Order Date</TableHead>
-                <TableHead>Delivery Date</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          {isMobile ? (
+            // Mobile Card View
+            <div className="space-y-4">
               {loading ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-4">
-                    Loading purchase orders...
-                  </TableCell>
-                </TableRow>
+                Array.from({ length: 3 }).map((_, index) => (
+                  <div key={index} className="border border-border rounded-lg p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-2">
+                        <div className="h-4 bg-muted rounded w-20"></div>
+                        <div className="h-3 bg-muted rounded w-32"></div>
+                      </div>
+                      <div className="h-5 bg-muted rounded-full w-16"></div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-3 bg-muted rounded w-24"></div>
+                      <div className="h-3 bg-muted rounded w-28"></div>
+                    </div>
+                  </div>
+                ))
               ) : filteredPOs.map((po) => (
-                <TableRow key={po.id} className="hover:bg-accent">
-                  <TableCell className="font-medium">{po.po_number}</TableCell>
-                  <TableCell>{po.supplier?.company_name || "—"}</TableCell>
-                  <TableCell className="font-semibold">{formatCurrency(po.total_amount)}</TableCell>
-                  <TableCell>
-                    <StatusBadge status={po.status as POStatus} />
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {po.order_date ? new Date(po.order_date).toLocaleDateString() : "—"}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {po.delivery_date ? new Date(po.delivery_date).toLocaleDateString() : "—"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem 
-                          className="gap-2"
-                          onClick={() => {
-                            setSelectedPO(po);
-                            setViewDialogOpen(true);
-                          }}
-                        >
-                          <Eye className="h-4 w-4" />
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          className="gap-2"
-                          onClick={() => {
-                            setSelectedPO(po);
-                            setEditDialogOpen(true);
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          className="gap-2"
-                          onClick={() => {
-                            toast({
-                              title: "Coming Soon",
-                              description: "PDF generation feature will be available soon",
-                            });
-                          }}
-                        >
-                          <FileText className="h-4 w-4" />
-                          Generate PDF (Soon)
-                        </DropdownMenuItem>
-                        {po.status === 'draft' ? (
+                <MobileCard key={po.id}>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-medium text-foreground">{po.po_number}</h3>
+                        <p className="text-sm text-muted-foreground">{po.supplier?.company_name || "—"}</p>
+                      </div>
+                      <StatusBadge status={po.status as POStatus} />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <MobileCardField 
+                        label="Amount" 
+                        value={<span className="font-semibold">{formatCurrency(po.total_amount)}</span>} 
+                      />
+                      <MobileCardField 
+                        label="Order Date" 
+                        value={po.order_date ? new Date(po.order_date).toLocaleDateString() : "—"} 
+                      />
+                      <MobileCardField 
+                        label="Delivery Date" 
+                        value={po.delivery_date ? new Date(po.delivery_date).toLocaleDateString() : "—"} 
+                      />
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2 border-t border-border">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setSelectedPO(po);
+                          setViewDialogOpen(true);
+                        }}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        View
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setSelectedPO(po);
+                          setEditDialogOpen(true);
+                        }}
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
                           <DropdownMenuItem 
-                            className="gap-2 text-destructive"
-                            onClick={() => handleDeleteOrVoidAction(po)}
+                            className="gap-2"
+                            onClick={() => {
+                              toast({
+                                title: "Coming Soon",
+                                description: "PDF generation feature will be available soon",
+                              });
+                            }}
                           >
-                            <Trash2 className="h-4 w-4" />
-                            Delete
+                            <FileText className="h-4 w-4" />
+                            Generate PDF (Soon)
                           </DropdownMenuItem>
-                        ) : (
-                          <DropdownMenuItem 
-                            className="gap-2 text-amber-600"
-                            onClick={() => handleDeleteOrVoidAction(po)}
-                          >
-                            <Ban className="h-4 w-4" />
-                            Void
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
+                          {po.status === 'draft' ? (
+                            <DropdownMenuItem 
+                              className="gap-2 text-destructive"
+                              onClick={() => handleDeleteOrVoidAction(po)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem 
+                              className="gap-2 text-amber-600"
+                              onClick={() => handleDeleteOrVoidAction(po)}
+                            >
+                              <Ban className="h-4 w-4" />
+                              Void
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                </MobileCard>
               ))}
-            </TableBody>
-          </Table>
+            </div>
+          ) : (
+            // Desktop Table View
+            <>
+              {loading ? (
+                <SkeletonTable rows={5} columns={7} />
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>PO Number</TableHead>
+                      <TableHead>Supplier</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Order Date</TableHead>
+                      <TableHead>Delivery Date</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredPOs.map((po) => (
+                      <TableRow key={po.id} className="hover:bg-accent">
+                        <TableCell className="font-medium">{po.po_number}</TableCell>
+                        <TableCell>{po.supplier?.company_name || "—"}</TableCell>
+                        <TableCell className="font-semibold">{formatCurrency(po.total_amount)}</TableCell>
+                        <TableCell>
+                          <StatusBadge status={po.status as POStatus} />
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {po.order_date ? new Date(po.order_date).toLocaleDateString() : "—"}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {po.delivery_date ? new Date(po.delivery_date).toLocaleDateString() : "—"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem 
+                                className="gap-2"
+                                onClick={() => {
+                                  setSelectedPO(po);
+                                  setViewDialogOpen(true);
+                                }}
+                              >
+                                <Eye className="h-4 w-4" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                className="gap-2"
+                                onClick={() => {
+                                  setSelectedPO(po);
+                                  setEditDialogOpen(true);
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                className="gap-2"
+                                onClick={() => {
+                                  toast({
+                                    title: "Coming Soon",
+                                    description: "PDF generation feature will be available soon",
+                                  });
+                                }}
+                              >
+                                <FileText className="h-4 w-4" />
+                                Generate PDF (Soon)
+                              </DropdownMenuItem>
+                              {po.status === 'draft' ? (
+                                <DropdownMenuItem 
+                                  className="gap-2 text-destructive"
+                                  onClick={() => handleDeleteOrVoidAction(po)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  Delete
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem 
+                                  className="gap-2 text-amber-600"
+                                  onClick={() => handleDeleteOrVoidAction(po)}
+                                >
+                                  <Ban className="h-4 w-4" />
+                                  Void
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </>
+          )}
 
           {!loading && filteredPOs.length === 0 && (
             <div className="text-center py-8">

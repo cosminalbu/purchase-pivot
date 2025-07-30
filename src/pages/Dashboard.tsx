@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import DashboardCard from "@/components/DashboardCard";
 import StatusBadge, { POStatus } from "@/components/StatusBadge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   FileText, 
   Users, 
@@ -49,31 +50,35 @@ const Dashboard = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <DashboardCard
           title="Total Purchase Orders"
-          value={statsLoading ? "..." : stats.totalPOs}
+          value={stats.totalPOs}
           change="+12% from last month"
           trend="up"
           icon={<FileText className="h-4 w-4" />}
+          loading={statsLoading}
         />
         <DashboardCard
           title="Pending Approval"
-          value={statsLoading ? "..." : stats.pendingApproval}
+          value={stats.pendingApproval}
           change="3 urgent"
           trend="neutral"
           icon={<Clock className="h-4 w-4" />}
+          loading={statsLoading}
         />
         <DashboardCard
           title="Total Value (YTD)"
-          value={statsLoading ? "..." : formatCurrency(stats.totalValue)}
+          value={formatCurrency(stats.totalValue)}
           change="+8% from last year"
           trend="up"
           icon={<DollarSign className="h-4 w-4" />}
+          loading={statsLoading}
         />
         <DashboardCard
           title="Active Suppliers"
-          value={statsLoading ? "..." : stats.activeSuppliers}
+          value={stats.activeSuppliers}
           change="+2 this month"
           trend="up"
           icon={<Users className="h-4 w-4" />}
+          loading={statsLoading}
         />
       </div>
 
@@ -90,7 +95,28 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             {posLoading ? (
-              <div className="text-center py-4">Loading recent purchase orders...</div>
+              <div className="space-y-4">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 border border-border rounded-lg">
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center space-x-3">
+                        <Skeleton className="h-5 w-20" />
+                        <Skeleton className="h-5 w-16 rounded-full" />
+                      </div>
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-48" />
+                    </div>
+                    <div className="text-right space-y-2">
+                      <Skeleton className="h-5 w-16" />
+                      <div className="flex space-x-1">
+                        <Skeleton className="h-6 w-6 rounded" />
+                        <Skeleton className="h-6 w-6 rounded" />
+                        <Skeleton className="h-6 w-6 rounded" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : recentPOs.length === 0 ? (
               <div className="text-center py-8">
                 <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -168,7 +194,18 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               {statsLoading ? (
-                <div className="text-center py-4">Loading...</div>
+                <div className="space-y-3">
+                  {Array.from({ length: 2 }).map((_, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-md">
+                      <div className="space-y-1">
+                        <Skeleton className="h-4 w-16" />
+                        <Skeleton className="h-3 w-12" />
+                      </div>
+                      <Skeleton className="h-5 w-16 rounded-full" />
+                    </div>
+                  ))}
+                  <Skeleton className="h-8 w-full" />
+                </div>
               ) : stats.pendingApproval === 0 ? (
                 <div className="text-center py-4">
                   <p className="text-muted-foreground">No pending approvals</p>
