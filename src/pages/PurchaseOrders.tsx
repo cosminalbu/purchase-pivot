@@ -30,10 +30,12 @@ import {
   FileText
 } from "lucide-react";
 import { usePurchaseOrders } from "@/hooks/usePurchaseOrders";
+import { CreatePurchaseOrderDialog } from "@/components/purchase-orders/CreatePurchaseOrderDialog";
 
 const PurchaseOrders = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<POStatus | "all">("all");
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const { purchaseOrders, loading } = usePurchaseOrders();
 
   const filteredPOs = purchaseOrders.filter(po => {
@@ -60,7 +62,7 @@ const PurchaseOrders = () => {
             Manage and track all your purchase orders
           </p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={() => setCreateDialogOpen(true)}>
           <Plus className="h-4 w-4" />
           Create Purchase Order
         </Button>
@@ -207,11 +209,16 @@ const PurchaseOrders = () => {
                   : "Create your first purchase order to get started"
                 }
               </p>
-              <Button>Create your first purchase order</Button>
+              <Button onClick={() => setCreateDialogOpen(true)}>Create your first purchase order</Button>
             </div>
           )}
         </CardContent>
       </Card>
+
+      <CreatePurchaseOrderDialog 
+        open={createDialogOpen} 
+        onOpenChange={setCreateDialogOpen} 
+      />
     </div>
   );
 };
