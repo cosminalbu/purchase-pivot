@@ -31,11 +31,15 @@ import {
 } from "lucide-react";
 import { usePurchaseOrders } from "@/hooks/usePurchaseOrders";
 import { CreatePurchaseOrderDialog } from "@/components/purchase-orders/CreatePurchaseOrderDialog";
+import { ViewPurchaseOrderDialog } from "@/components/purchase-orders/ViewPurchaseOrderDialog";
+import { PurchaseOrder } from "@/lib/supabase-types";
 
 const PurchaseOrders = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<POStatus | "all">("all");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null);
   const { purchaseOrders, loading } = usePurchaseOrders();
 
   const filteredPOs = purchaseOrders.filter(po => {
@@ -175,7 +179,13 @@ const PurchaseOrders = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem className="gap-2">
+                        <DropdownMenuItem 
+                          className="gap-2"
+                          onClick={() => {
+                            setSelectedPO(po);
+                            setViewDialogOpen(true);
+                          }}
+                        >
                           <Eye className="h-4 w-4" />
                           View Details
                         </DropdownMenuItem>
@@ -218,6 +228,12 @@ const PurchaseOrders = () => {
       <CreatePurchaseOrderDialog 
         open={createDialogOpen} 
         onOpenChange={setCreateDialogOpen} 
+      />
+      
+      <ViewPurchaseOrderDialog 
+        open={viewDialogOpen} 
+        onOpenChange={setViewDialogOpen} 
+        purchaseOrder={selectedPO}
       />
     </div>
   );
