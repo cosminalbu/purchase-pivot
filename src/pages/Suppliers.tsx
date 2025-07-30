@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -16,7 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Search, Users, Contact } from "lucide-react";
+import { MoreHorizontal, Users, Contact } from "lucide-react";
 import { useSuppliers } from "@/hooks/useSuppliers";
 import { AddSupplierForm } from "@/components/forms/AddSupplierForm";
 import { ViewSupplierDialog } from "@/components/suppliers/ViewSupplierDialog";
@@ -24,6 +23,11 @@ import { EditSupplierDialog } from "@/components/suppliers/EditSupplierDialog";
 import { DeleteSupplierDialog } from "@/components/suppliers/DeleteSupplierDialog";
 import { ManageContactsDialog } from "@/components/suppliers/ManageContactsDialog";
 import { Supplier } from "@/lib/supabase-types";
+import { EnhancedSearch } from "@/components/ui/enhanced-search";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { SkeletonTable } from "@/components/ui/skeleton-table";
+import { MobileCard } from "@/components/ui/mobile-card";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Helper function to format currency
 const formatCurrency = (amount: number): string => {
@@ -34,30 +38,79 @@ const formatCurrency = (amount: number): string => {
 };
 
 const Suppliers = () => {
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [contactsDialogOpen, setContactsDialogOpen] = useState(false);
   const { suppliers, loading } = useSuppliers();
+  const isMobile = useIsMobile();
 
-  // Filter suppliers based on search term
-  const filteredSuppliers = suppliers.filter(supplier =>
-    supplier.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (supplier.email && supplier.email.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Filter suppliers based on search and filters
+  const filteredSuppliers = suppliers.filter((supplier) => {
+    const matchesSearch = 
+      supplier.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      supplier.abn?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      supplier.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      supplier.phone?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      supplier.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      supplier.state?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesFilters = selectedFilters.length === 0 || selectedFilters.some(filter => {
+      switch (filter) {
+        case 'active':
+          return supplier.status === 'active';
+        case 'inactive':
+          return supplier.status === 'inactive';
+        case 'gst-registered':
+          return supplier.is_gst_registered;
+        case 'no-gst':
+          return !supplier.is_gst_registered;
+        default:
+          return true;
+      }
+    });
+
+    return matchesSearch && matchesFilters;
+  });
+
+  const filterOptions = [
+    { label: 'Active', value: 'active', count: suppliers.filter(s => s.status === 'active').length },
+    { label: 'Inactive', value: 'inactive', count: suppliers.filter(s => s.status === 'inactive').length },
+    { label: 'GST Registered', value: 'gst-registered', count: suppliers.filter(s => s.is_gst_registered).length },
+    { label: 'No GST', value: 'no-gst', count: suppliers.filter(s => !s.is_gst_registered).length },
+  ];
+
+  if (loading) {
+    return (
+      <ErrorBoundary>
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold">Suppliers</h1>
+              <p className="text-muted-foreground">Manage your supplier relationships</p>
+            </div>
+            <AddSupplierForm />
+          </div>
+          <SkeletonTable />
+        </div>
+      </ErrorBoundary>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Suppliers</h1>
-          <p className="text-muted-foreground">Manage your supplier relationships</p>
+    <ErrorBoundary>
+      <div className="space-y-6">
+        {/* Page Header */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Suppliers</h1>
+            <p className="text-muted-foreground">Manage your supplier relationships</p>
+          </div>
+          <AddSupplierForm />
         </div>
-        <AddSupplierForm />
-      </div>
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-2">
@@ -69,7 +122,7 @@ const Suppliers = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">{loading ? "..." : suppliers.length}</div>
+            <div className="text-2xl font-bold text-foreground">{suppliers.length}</div>
           </CardContent>
         </Card>
         <Card>
@@ -81,48 +134,43 @@ const Suppliers = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-foreground">
-              {loading ? "..." : suppliers.filter(s => s.status === 'active').length}
+              {suppliers.filter(s => s.status === 'active').length}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-        <Input
-          placeholder="Search suppliers..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
-      </div>
+      <EnhancedSearch
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        selectedFilters={selectedFilters}
+        onFiltersChange={setSelectedFilters}
+        filterOptions={filterOptions}
+        placeholder="Search suppliers by name, ABN, email, phone, or location..."
+        resultCount={filteredSuppliers.length}
+        totalCount={suppliers.length}
+      />
 
-      {/* Suppliers Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Suppliers</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Company</TableHead>
-                <TableHead>ABN</TableHead>
-                <TableHead>Contact Info</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
+      {/* Suppliers Table/Cards */}
+      {!isMobile ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Suppliers</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4">
-                    Loading suppliers...
-                  </TableCell>
+                  <TableHead>Company</TableHead>
+                  <TableHead>ABN</TableHead>
+                  <TableHead>Contact Info</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ) : filteredSuppliers.map((supplier) => (
+              </TableHeader>
+              <TableBody>
+                {filteredSuppliers.map((supplier) => (
                 <TableRow key={supplier.id}>
                   <TableCell className="font-medium">
                     <div>
@@ -186,15 +234,15 @@ const Suppliers = () => {
                   </TableCell>
                 </TableRow>
               ))}
-              {!loading && filteredSuppliers.length === 0 && (
+              {filteredSuppliers.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8">
                     <div className="flex flex-col items-center gap-2">
                       <Users className="h-8 w-8 text-muted-foreground" />
                       <p className="text-muted-foreground">
-                        {searchTerm ? "No suppliers found matching your search" : "No suppliers found"}
+                        {searchQuery ? "No suppliers found matching your search" : "No suppliers found"}
                       </p>
-                      {!searchTerm && <AddSupplierForm />}
+                      {!searchQuery && <AddSupplierForm />}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -203,6 +251,62 @@ const Suppliers = () => {
           </Table>
         </CardContent>
       </Card>
+      ) : (
+        <div className="space-y-4">
+          {filteredSuppliers.map((supplier) => (
+            <MobileCard
+              key={supplier.id}
+              title={supplier.company_name}
+              subtitle={supplier.abn ? `ABN: ${supplier.abn}` : undefined}
+              badges={[
+                {
+                  text: supplier.status.charAt(0).toUpperCase() + supplier.status.slice(1),
+                  variant: supplier.status === 'active' ? 'default' : 'secondary'
+                },
+                ...(supplier.is_gst_registered ? [{ text: 'GST Registered', variant: 'outline' as const }] : [])
+              ]}
+              metadata={[
+                ...(supplier.email ? [{ label: 'Email', value: supplier.email }] : []),
+                ...(supplier.phone ? [{ label: 'Phone', value: supplier.phone }] : []),
+                ...([supplier.city, supplier.state].filter(Boolean).length > 0 
+                  ? [{ label: 'Location', value: [supplier.city, supplier.state].filter(Boolean).join(', ') }] : [])
+              ]}
+              actions={[
+                {
+                  label: 'View',
+                  onClick: () => {
+                    setSelectedSupplier(supplier);
+                    setViewDialogOpen(true);
+                  }
+                },
+                {
+                  label: 'Edit',
+                  onClick: () => {
+                    setSelectedSupplier(supplier);
+                    setEditDialogOpen(true);
+                  }
+                },
+                {
+                  label: 'Contacts',
+                  onClick: () => {
+                    setSelectedSupplier(supplier);
+                    setContactsDialogOpen(true);
+                  }
+                }
+              ]}
+            />
+          ))}
+          {filteredSuppliers.length === 0 && (
+            <div className="flex flex-col items-center gap-2 py-8">
+              <Users className="h-8 w-8 text-muted-foreground" />
+              <p className="text-muted-foreground text-center">
+                {searchQuery ? "No suppliers found matching your search" : "No suppliers found"}
+              </p>
+              {!searchQuery && <AddSupplierForm />}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Dialogs */}
       <ViewSupplierDialog
@@ -229,6 +333,7 @@ const Suppliers = () => {
         onOpenChange={setContactsDialogOpen}
       />
     </div>
+    </ErrorBoundary>
   );
 };
 

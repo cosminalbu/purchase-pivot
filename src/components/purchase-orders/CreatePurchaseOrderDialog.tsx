@@ -26,26 +26,31 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
 import { useSuppliers } from "@/hooks/useSuppliers";
 import { usePurchaseOrders } from "@/hooks/usePurchaseOrders";
 import { PurchaseOrderLineItems, LineItem } from "./PurchaseOrderLineItems";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { EnhancedDatePicker } from "@/components/ui/enhanced-date-picker";
+import { DraftIndicator } from "@/components/ui/draft-indicator";
+import { useFormDraft } from "@/hooks/useFormDraft";
+import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { format } from "date-fns";
 
 const purchaseOrderSchema = z.object({
   supplier_id: z.string().min(1, "Supplier is required"),
   order_date: z.date().optional(),
   required_date: z.date().optional(),
   notes: z.string().optional(),
+}).refine((data) => {
+  if (data.order_date && data.required_date) {
+    return data.required_date >= data.order_date;
+  }
+  return true;
+}, {
+  message: "Required date must be after or equal to order date",
+  path: ["required_date"],
 });
 
 type PurchaseOrderFormData = z.infer<typeof purchaseOrderSchema>;
@@ -70,6 +75,15 @@ export const CreatePurchaseOrderDialog = ({ open, onOpenChange }: CreatePurchase
       order_date: new Date(),
       notes: "",
     },
+  });
+
+  const currentValues = form.watch();
+  const { draftState, saveDraft, clearDraft, restoreDraft, hasDraft, hasUnsavedChanges } = 
+    useFormDraft('create-purchase-order', currentValues, open);
+  
+  useUnsavedChanges({ 
+    hasUnsavedChanges: (hasUnsavedChanges || lineItems.length > 0) && open,
+    shouldBlock: open 
   });
 
   const onSubmit = async (data: PurchaseOrderFormData) => {
@@ -149,6 +163,7 @@ export const CreatePurchaseOrderDialog = ({ open, onOpenChange }: CreatePurchase
       // Reset form and close dialog
       form.reset();
       setLineItems([]);
+      clearDraft();
       onOpenChange(false);
     } catch (error) {
       toast({
@@ -161,12 +176,27 @@ export const CreatePurchaseOrderDialog = ({ open, onOpenChange }: CreatePurchase
     }
   };
 
+  const handleRestoreDraft = () => {
+    const draft = restoreDraft();
+    if (draft) {
+      form.reset(draft);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Create Purchase Order</DialogTitle>
-        </DialogHeader>
+    <ErrorBoundary>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create Purchase Order</DialogTitle>
+            <DraftIndicator
+              lastSaved={draftState.lastSaved}
+              hasUnsavedChanges={hasUnsavedChanges}
+              hasDraft={hasDraft}
+              onRestoreDraft={handleRestoreDraft}
+              onSaveDraft={saveDraft}
+            />
+          </DialogHeader>
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -202,38 +232,15 @@ export const CreatePurchaseOrderDialog = ({ open, onOpenChange }: CreatePurchase
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Order Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) =>
-                            date < new Date("1900-01-01")
-                          }
-                          initialFocus
-                          className="p-3 pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <FormControl>
+                      <EnhancedDatePicker
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Select order date"
+                        maxDate={new Date()}
+                        showPresets
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -246,38 +253,15 @@ export const CreatePurchaseOrderDialog = ({ open, onOpenChange }: CreatePurchase
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Required Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) =>
-                          date < new Date()
-                        }
-                        initialFocus
-                        className="p-3 pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <FormControl>
+                    <EnhancedDatePicker
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Select required date"
+                      minDate={currentValues.order_date || new Date()}
+                      showPresets
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -325,5 +309,6 @@ export const CreatePurchaseOrderDialog = ({ open, onOpenChange }: CreatePurchase
         </Form>
       </DialogContent>
     </Dialog>
+    </ErrorBoundary>
   );
 };

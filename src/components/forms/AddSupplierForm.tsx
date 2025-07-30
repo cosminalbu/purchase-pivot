@@ -10,17 +10,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus } from "lucide-react";
 import { useSuppliers } from "@/hooks/useSuppliers";
+import { EnhancedFormField } from "@/components/ui/enhanced-form-field";
+import { DraftIndicator } from "@/components/ui/draft-indicator";
+import { useFormValidation, validateABN, validateEmail, validatePhone } from "@/hooks/useFormValidation";
+import { useFormDraft } from "@/hooks/useFormDraft";
+import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 
 const supplierSchema = z.object({
   company_name: z.string().min(1, "Company name is required"),
-  abn: z.string().optional(),
+  abn: z.string().optional().refine((val) => !val || validateABN(val), "Invalid ABN format"),
   address_line_1: z.string().optional(),
   address_line_2: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
   postal_code: z.string().optional(),
-  phone: z.string().optional(),
-  email: z.string().email("Invalid email").optional().or(z.literal("")),
+  phone: z.string().optional().refine((val) => !val || validatePhone(val), "Invalid phone number format"),
+  email: z.string().optional().refine((val) => !val || validateEmail(val), "Invalid email format").or(z.literal("")),
   website: z.string().optional(),
   status: z.enum(["active", "inactive"]).default("active"),
   is_gst_registered: z.boolean().default(true),
@@ -50,6 +56,16 @@ export const AddSupplierForm = () => {
     },
   });
 
+  const currentValues = form.watch();
+  const validation = useFormValidation(supplierSchema, currentValues);
+  const { draftState, saveDraft, clearDraft, restoreDraft, hasDraft, hasUnsavedChanges } = 
+    useFormDraft('add-supplier', currentValues, open);
+  
+  useUnsavedChanges({ 
+    hasUnsavedChanges: hasUnsavedChanges && open,
+    shouldBlock: open 
+  });
+
   const onSubmit = async (data: SupplierFormData) => {
     try {
       // Convert empty strings to null for optional fields
@@ -69,81 +85,89 @@ export const AddSupplierForm = () => {
       };
       await addSupplier(supplierData);
       form.reset();
+      clearDraft();
       setOpen(false);
     } catch (error) {
       // Error handling is done in the hook
     }
   };
 
+  const handleRestoreDraft = () => {
+    const draft = restoreDraft();
+    if (draft) {
+      form.reset(draft);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Supplier
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Add New Supplier</DialogTitle>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+    <ErrorBoundary>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Supplier
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Add New Supplier</DialogTitle>
+            <DraftIndicator
+              lastSaved={draftState.lastSaved}
+              hasUnsavedChanges={hasUnsavedChanges}
+              hasDraft={hasDraft}
+              onRestoreDraft={handleRestoreDraft}
+              onSaveDraft={saveDraft}
+            />
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <FormField
+              <EnhancedFormField
                 control={form.control}
                 name="company_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Company Name *</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                label="Company Name"
+                required
+                validation={{
+                  isValid: !validation.errors.company_name && !!currentValues.company_name,
+                  isValidating: validation.isValidating,
+                  error: validation.errors.company_name,
+                }}
               />
-              <FormField
+              <EnhancedFormField
                 control={form.control}
                 name="abn"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>ABN</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                label="ABN"
+                placeholder="11 digits"
+                validation={{
+                  isValid: !validation.errors.abn && validateABN(currentValues.abn || ''),
+                  isValidating: validation.isValidating,
+                  error: validation.errors.abn,
+                }}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <FormField
+              <EnhancedFormField
                 control={form.control}
                 name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input type="email" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                label="Email"
+                type="email"
+                validation={{
+                  isValid: !validation.errors.email && validateEmail(currentValues.email || ''),
+                  isValidating: validation.isValidating,
+                  error: validation.errors.email,
+                }}
               />
-              <FormField
+              <EnhancedFormField
                 control={form.control}
                 name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                label="Phone"
+                placeholder="e.g. 0412 345 678"
+                validation={{
+                  isValid: !validation.errors.phone && validatePhone(currentValues.phone || ''),
+                  isValidating: validation.isValidating,
+                  error: validation.errors.phone,
+                }}
               />
             </div>
 
@@ -293,5 +317,6 @@ export const AddSupplierForm = () => {
         </Form>
       </DialogContent>
     </Dialog>
+    </ErrorBoundary>
   );
 };
