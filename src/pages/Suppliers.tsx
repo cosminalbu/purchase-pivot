@@ -19,6 +19,11 @@ import {
 import { MoreHorizontal, Search, Users, Contact } from "lucide-react";
 import { useSuppliers } from "@/hooks/useSuppliers";
 import { AddSupplierForm } from "@/components/forms/AddSupplierForm";
+import { ViewSupplierDialog } from "@/components/suppliers/ViewSupplierDialog";
+import { EditSupplierDialog } from "@/components/suppliers/EditSupplierDialog";
+import { DeleteSupplierDialog } from "@/components/suppliers/DeleteSupplierDialog";
+import { ManageContactsDialog } from "@/components/suppliers/ManageContactsDialog";
+import { Supplier } from "@/lib/supabase-types";
 
 // Helper function to format currency
 const formatCurrency = (amount: number): string => {
@@ -30,6 +35,11 @@ const formatCurrency = (amount: number): string => {
 
 const Suppliers = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [contactsDialogOpen, setContactsDialogOpen] = useState(false);
   const { suppliers, loading } = useSuppliers();
 
   // Filter suppliers based on search term
@@ -150,10 +160,25 @@ const Suppliers = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>View Details</DropdownMenuItem>
-                        <DropdownMenuItem>Edit</DropdownMenuItem>
-                        <DropdownMenuItem>Manage Contacts</DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
+                        <DropdownMenuItem onClick={() => {
+                          setSelectedSupplier(supplier);
+                          setViewDialogOpen(true);
+                        }}>View Details</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => {
+                          setSelectedSupplier(supplier);
+                          setEditDialogOpen(true);
+                        }}>Edit</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => {
+                          setSelectedSupplier(supplier);
+                          setContactsDialogOpen(true);
+                        }}>Manage Contacts</DropdownMenuItem>
+                        <DropdownMenuItem 
+                          className="text-destructive"
+                          onClick={() => {
+                            setSelectedSupplier(supplier);
+                            setDeleteDialogOpen(true);
+                          }}
+                        >
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -178,6 +203,31 @@ const Suppliers = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Dialogs */}
+      <ViewSupplierDialog
+        supplier={selectedSupplier}
+        open={viewDialogOpen}
+        onOpenChange={setViewDialogOpen}
+      />
+
+      <EditSupplierDialog
+        supplier={selectedSupplier}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+      />
+
+      <DeleteSupplierDialog
+        supplier={selectedSupplier}
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+      />
+
+      <ManageContactsDialog
+        supplier={selectedSupplier}
+        open={contactsDialogOpen}
+        onOpenChange={setContactsDialogOpen}
+      />
     </div>
   );
 };
