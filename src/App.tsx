@@ -8,6 +8,7 @@ import Layout from "./components/Layout";
 import { KeyboardShortcutsDialog, useKeyboardShortcuts } from '@/components/ui/keyboard-shortcuts';
 import { NotificationCenterDialog } from '@/components/ui/notification-center-dialog';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useRealTimeData } from '@/hooks/useRealTimeData';
 import Dashboard from "./pages/Dashboard";
 import PurchaseOrders from "./pages/PurchaseOrders";
 import Suppliers from "./pages/Suppliers";
@@ -24,6 +25,9 @@ const App = () => {
     archive,
     clearAll
   } = useNotifications();
+  
+  // Set up real-time data subscriptions
+  useRealTimeData();
 
   return (
     <TooltipProvider>

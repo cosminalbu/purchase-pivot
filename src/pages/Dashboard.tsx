@@ -16,6 +16,7 @@ import {
 import { useDashboardStatsQuery } from "@/hooks/useDashboardStatsQuery";
 import { usePurchaseOrders } from "@/hooks/usePurchaseOrders";
 import { useEnhancedToast } from "@/hooks/useEnhancedToast";
+import { ActivityFeed } from "@/components/ui/activity-feed";
 
 const Dashboard = () => {
   const { data: stats, isLoading: statsLoading, error } = useDashboardStatsQuery();
@@ -96,9 +97,9 @@ const Dashboard = () => {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-12">
         {/* Recent Purchase Orders */}
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-8">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               Recent Purchase Orders
@@ -178,9 +179,13 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Quick Actions & Summary */}
-        <div className="space-y-6">
-          {/* Quick Actions */}
+        {/* Activity Feed */}
+        <div className="lg:col-span-4">
+          <ActivityFeed limit={10} />
+        </div>
+
+        {/* Quick Actions */}
+        <div className="lg:col-span-4">
           <Card>
             <CardHeader>
               <CardTitle>Quick Actions</CardTitle>
@@ -198,51 +203,6 @@ const Dashboard = () => {
                 <TrendingUp className="h-4 w-4" />
                 View Reports
               </Button>
-            </CardContent>
-          </Card>
-
-          {/* Approval Queue */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Approval Queue</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {statsLoading ? (
-                <div className="space-y-3">
-                  {Array.from({ length: 2 }).map((_, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-md">
-                      <div className="space-y-1">
-                        <Skeleton className="h-4 w-16" />
-                        <Skeleton className="h-3 w-12" />
-                      </div>
-                      <Skeleton className="h-5 w-16 rounded-full" />
-                    </div>
-                  ))}
-                  <Skeleton className="h-8 w-full" />
-                </div>
-              ) : (stats?.pendingApproval || 0) === 0 ? (
-                <div className="text-center py-4">
-                  <p className="text-muted-foreground">No pending approvals</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {purchaseOrders
-                    .filter(po => po.status === 'pending')
-                    .slice(0, 2)
-                    .map((po) => (
-                      <div key={po.id} className="flex items-center justify-between p-3 bg-muted rounded-md">
-                        <div>
-                          <p className="font-medium text-sm">{po.po_number}</p>
-                          <p className="text-xs text-muted-foreground">{formatCurrency(po.total_amount)}</p>
-                        </div>
-                        <StatusBadge status={po.status as POStatus} />
-                      </div>
-                    ))}
-                  <Button variant="outline" className="w-full text-sm">
-                    Review All ({stats?.pendingApproval || 0})
-                  </Button>
-                </div>
-              )}
             </CardContent>
           </Card>
         </div>

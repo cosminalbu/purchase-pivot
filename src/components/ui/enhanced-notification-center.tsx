@@ -14,7 +14,7 @@ interface Notification {
   type: 'info' | 'success' | 'warning' | 'error'
   timestamp: Date
   read: boolean
-  category: 'purchase-order' | 'supplier' | 'system' | 'approval'
+  category: 'purchase-order' | 'supplier' | 'system' | 'approval' | 'user'
   actions?: Array<{
     label: string
     onClick: () => void
@@ -42,6 +42,7 @@ const categoryLabels = {
   'supplier': 'Supplier',
   'system': 'System',
   'approval': 'Approval',
+  'user': 'User',
 }
 
 export const NotificationCenter: React.FC<NotificationCenterProps> = ({

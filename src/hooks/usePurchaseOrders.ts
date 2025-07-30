@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { PurchaseOrder, PurchaseOrderLineItem } from '@/lib/supabase-types';
 import { useToast } from '@/hooks/use-toast';
+import { useActivityLog } from './useActivityLog';
 
 export const usePurchaseOrders = () => {
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { logActivity } = useActivityLog();
 
   const fetchPurchaseOrders = async () => {
     try {
@@ -53,6 +55,17 @@ export const usePurchaseOrders = () => {
       if (error) throw error;
       
       setPurchaseOrders(prev => [data, ...prev]);
+      
+      // Log activity
+      await logActivity(
+        'purchase_order',
+        data.id,
+        'created',
+        `Created purchase order ${data.po_number} for ${data.supplier?.company_name || 'Unknown Supplier'}`,
+        undefined,
+        data
+      );
+      
       toast({
         title: "Success",
         description: "Purchase order created successfully",
@@ -83,7 +96,19 @@ export const usePurchaseOrders = () => {
 
       if (error) throw error;
       
+      const oldPO = purchaseOrders.find(po => po.id === id);
       setPurchaseOrders(prev => prev.map(po => po.id === id ? data : po));
+      
+      // Log activity
+      await logActivity(
+        'purchase_order',
+        id,
+        'updated',
+        `Updated purchase order ${data.po_number}`,
+        oldPO,
+        data
+      );
+      
       toast({
         title: "Success",
         description: "Purchase order updated successfully",
@@ -120,6 +145,16 @@ export const usePurchaseOrders = () => {
       if (error) throw error;
       
       setPurchaseOrders(prev => prev.filter(po => po.id !== id));
+      
+      // Log activity
+      await logActivity(
+        'purchase_order',
+        id,
+        'deleted',
+        `Deleted purchase order ${po.po_number}`,
+        po
+      );
+      
       toast({
         title: "Success",
         description: "Purchase order deleted successfully",
@@ -149,7 +184,19 @@ export const usePurchaseOrders = () => {
 
       if (error) throw error;
       
+      const oldPO = purchaseOrders.find(po => po.id === id);
       setPurchaseOrders(prev => prev.map(po => po.id === id ? data : po));
+      
+      // Log activity
+      await logActivity(
+        'purchase_order',
+        id,
+        'voided',
+        `Voided purchase order ${data.po_number}`,
+        oldPO,
+        data
+      );
+      
       toast({
         title: "Success",
         description: "Purchase order voided successfully",
