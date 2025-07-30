@@ -21,19 +21,17 @@ export const useInfiniteSuppliers = ({
         .select(`
           id,
           company_name,
-          contact_person,
-          email,
-          phone,
-          address,
+          abn,
+          address_line_1,
+          address_line_2,
           city,
           state,
           postal_code,
-          country,
-          tax_id,
-          payment_terms,
-          credit_limit,
+          phone,
+          email,
+          website,
           status,
-          notes,
+          is_gst_registered,
           created_at,
           updated_at
         `)
@@ -42,7 +40,7 @@ export const useInfiniteSuppliers = ({
 
       // Apply search filter
       if (searchQuery.trim()) {
-        query = query.or(`company_name.ilike.%${searchQuery}%,contact_person.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`)
+        query = query.or(`company_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%,abn.ilike.%${searchQuery}%`)
       }
 
       // Apply status filters
