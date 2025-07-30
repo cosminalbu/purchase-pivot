@@ -16,7 +16,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Users, Contact } from "lucide-react";
-import { useSuppliers } from "@/hooks/useSuppliers";
+import { useInfiniteSuppliers } from "@/hooks/useInfiniteSuppliers";
+import { InfiniteScroll } from "@/components/ui/infinite-scroll";
 import { AddSupplierForm } from "@/components/forms/AddSupplierForm";
 import { ViewSupplierDialog } from "@/components/suppliers/ViewSupplierDialog";
 import { EditSupplierDialog } from "@/components/suppliers/EditSupplierDialog";
@@ -45,7 +46,20 @@ const Suppliers = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [contactsDialogOpen, setContactsDialogOpen] = useState(false);
-  const { suppliers, loading } = useSuppliers();
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage
+  } = useInfiniteSuppliers({
+    searchQuery,
+    filters: selectedFilters
+  });
+
+  // Flatten infinite query data
+  const suppliers = data?.pages.flatMap(page => page.suppliers) || [];
+  const loading = isLoading;
   const isMobile = useIsMobile();
 
   // Filter suppliers based on search and filters
@@ -163,18 +177,23 @@ const Suppliers = () => {
             <CardTitle>Suppliers</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Company</TableHead>
-                  <TableHead>ABN</TableHead>
-                  <TableHead>Contact Info</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <InfiniteScroll
+              hasNextPage={hasNextPage}
+              isFetchingNextPage={isFetchingNextPage}
+              fetchNextPage={fetchNextPage}
+            >
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Company</TableHead>
+                    <TableHead>ABN</TableHead>
+                    <TableHead>Contact Info</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                 {filteredSuppliers.map((supplier) => (
                 <TableRow key={supplier.id}>
                   <TableCell className="font-medium">
@@ -252,13 +271,19 @@ const Suppliers = () => {
                   </TableCell>
                 </TableRow>
               )}
-            </TableBody>
-          </Table>
+              </TableBody>
+            </Table>
+          </InfiniteScroll>
         </CardContent>
       </Card>
       ) : (
-        <div className="space-y-4">
-          {filteredSuppliers.map((supplier) => (
+        <InfiniteScroll
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+          fetchNextPage={fetchNextPage}
+        >
+          <div className="space-y-4">
+            {filteredSuppliers.map((supplier) => (
             <MobileCard key={supplier.id}>
               <div className="space-y-3">
                 <div className="flex justify-between items-start">
@@ -339,17 +364,18 @@ const Suppliers = () => {
                 </div>
               </div>
             </MobileCard>
-          ))}
-          {filteredSuppliers.length === 0 && (
-            <div className="flex flex-col items-center gap-2 py-8">
-              <Users className="h-8 w-8 text-muted-foreground" />
-              <p className="text-muted-foreground text-center">
-                {searchQuery ? "No suppliers found matching your search" : "No suppliers found"}
-              </p>
-              {!searchQuery && <AddSupplierForm />}
-            </div>
-          )}
-        </div>
+            ))}
+            {filteredSuppliers.length === 0 && (
+              <div className="flex flex-col items-center gap-2 py-8">
+                <Users className="h-8 w-8 text-muted-foreground" />
+                <p className="text-muted-foreground text-center">
+                  {searchQuery ? "No suppliers found matching your search" : "No suppliers found"}
+                </p>
+                {!searchQuery && <AddSupplierForm />}
+              </div>
+            )}
+          </div>
+        </InfiniteScroll>
       )}
 
       {/* Dialogs */}

@@ -6,6 +6,8 @@ import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 import { KeyboardShortcutsDialog, useKeyboardShortcuts } from '@/components/ui/keyboard-shortcuts';
+import { NotificationCenterDialog } from '@/components/ui/notification-center-dialog';
+import { useNotifications } from '@/hooks/useNotifications';
 import Dashboard from "./pages/Dashboard";
 import PurchaseOrders from "./pages/PurchaseOrders";
 import Suppliers from "./pages/Suppliers";
@@ -15,6 +17,13 @@ import NotFound from "./pages/NotFound";
 
 const App = () => {
   const { showShortcuts, setShowShortcuts } = useKeyboardShortcuts();
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    archive,
+    clearAll
+  } = useNotifications();
 
   return (
     <TooltipProvider>
@@ -26,7 +35,17 @@ const App = () => {
             <Route path="/auth" element={<Auth />} />
             <Route path="/" element={
               <ProtectedRoute>
-                <Layout>
+                <Layout
+                  notificationCenter={
+                    <NotificationCenterDialog
+                      notifications={notifications}
+                      unreadCount={unreadCount}
+                      onMarkAsRead={markAsRead}
+                      onArchive={archive}
+                      onClearAll={clearAll}
+                    />
+                  }
+                >
                   <Dashboard />
                 </Layout>
               </ProtectedRoute>

@@ -22,9 +22,10 @@ import PendingApproval from "@/pages/PendingApproval";
 
 interface LayoutProps {
   children: ReactNode;
+  notificationCenter?: ReactNode;
 }
 
-const Layout = ({ children }: LayoutProps) => {
+const Layout = ({ children, notificationCenter }: LayoutProps) => {
   const location = useLocation();
   const { profile, signOut } = useAuth();
   const { toast } = useToast();
@@ -102,10 +103,12 @@ const Layout = ({ children }: LayoutProps) => {
                 <Plus className="h-4 w-4" />
                 New PO
               </Button>
-              <Button variant="ghost" size="sm">
-                <Bell className="h-4 w-4" />
-                <Badge className="ml-1 bg-status-pending text-white">3</Badge>
-              </Button>
+              {notificationCenter || (
+                <Button variant="ghost" size="sm">
+                  <Bell className="h-4 w-4" />
+                  <Badge className="ml-1 bg-status-pending text-white">3</Badge>
+                </Button>
+              )}
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
