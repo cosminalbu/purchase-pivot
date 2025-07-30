@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-export type POStatus = "draft" | "pending" | "approved" | "delivered" | "cancelled";
+export type POStatus = "draft" | "pending" | "approved" | "delivered" | "cancelled" | "voided";
 
 interface StatusBadgeProps {
   status: POStatus;
@@ -28,6 +28,10 @@ const statusConfig = {
   cancelled: {
     label: "Cancelled",
     className: "bg-red-500 text-white",
+  },
+  voided: {
+    label: "Voided",
+    className: "bg-amber-500 text-white",
   },
 };
 

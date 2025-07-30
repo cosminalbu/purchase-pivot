@@ -275,6 +275,7 @@ export type Database = {
         | "approved"
         | "delivered"
         | "cancelled"
+        | "voided"
       supplier_status: "active" | "inactive"
       user_roles: "admin" | "manager" | "employee" | "viewer" | "pending"
     }
@@ -410,6 +411,7 @@ export const Constants = {
         "approved",
         "delivered",
         "cancelled",
+        "voided",
       ],
       supplier_status: ["active", "inactive"],
       user_roles: ["admin", "manager", "employee", "viewer", "pending"],

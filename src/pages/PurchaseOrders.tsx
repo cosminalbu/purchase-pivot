@@ -26,6 +26,7 @@ import {
   Eye,
   Edit,
   Trash2,
+  Ban,
   MoreHorizontal,
   FileText
 } from "lucide-react";
@@ -33,7 +34,10 @@ import { usePurchaseOrders } from "@/hooks/usePurchaseOrders";
 import { CreatePurchaseOrderDialog } from "@/components/purchase-orders/CreatePurchaseOrderDialog";
 import { ViewPurchaseOrderDialog } from "@/components/purchase-orders/ViewPurchaseOrderDialog";
 import { EditPurchaseOrderDialog } from "@/components/purchase-orders/EditPurchaseOrderDialog";
+import { DeletePurchaseOrderDialog } from "@/components/purchase-orders/DeletePurchaseOrderDialog";
+import { VoidPurchaseOrderDialog } from "@/components/purchase-orders/VoidPurchaseOrderDialog";
 import { PurchaseOrder } from "@/lib/supabase-types";
+import { useToast } from "@/hooks/use-toast";
 
 const PurchaseOrders = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -41,8 +45,11 @@ const PurchaseOrders = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [voidDialogOpen, setVoidDialogOpen] = useState(false);
   const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null);
-  const { purchaseOrders, loading } = usePurchaseOrders();
+  const { purchaseOrders, loading, deletePurchaseOrder, voidPurchaseOrder } = usePurchaseOrders();
+  const { toast } = useToast();
 
   const filteredPOs = purchaseOrders.filter(po => {
     const matchesSearch = po.po_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -56,6 +63,37 @@ const PurchaseOrders = () => {
       style: 'currency',
       currency: 'AUD'
     }).format(amount);
+  };
+
+  const handleDeletePO = async () => {
+    if (!selectedPO) return;
+    try {
+      await deletePurchaseOrder(selectedPO.id);
+      setDeleteDialogOpen(false);
+      setSelectedPO(null);
+    } catch (error) {
+      // Error handled in hook
+    }
+  };
+
+  const handleVoidPO = async () => {
+    if (!selectedPO) return;
+    try {
+      await voidPurchaseOrder(selectedPO.id);
+      setVoidDialogOpen(false);
+      setSelectedPO(null);
+    } catch (error) {
+      // Error handled in hook
+    }
+  };
+
+  const handleDeleteOrVoidAction = (po: PurchaseOrder) => {
+    setSelectedPO(po);
+    if (po.status === 'draft') {
+      setDeleteDialogOpen(true);
+    } else {
+      setVoidDialogOpen(true);
+    }
   };
 
   return (
@@ -117,12 +155,50 @@ const PurchaseOrders = () => {
                   <DropdownMenuItem onClick={() => setStatusFilter("cancelled")}>
                     Cancelled
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setStatusFilter("voided")}>
+                    Voided
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <Button variant="outline" className="gap-2">
+              <Button 
+                variant="outline" 
+                className="gap-2"
+                onClick={() => {
+                  const csvContent = filteredPOs.map(po => ({
+                    'PO Number': po.po_number,
+                    'Supplier': po.supplier?.company_name || '',
+                    'Status': po.status,
+                    'Amount': po.total_amount,
+                    'Order Date': po.order_date || '',
+                    'Delivery Date': po.delivery_date || '',
+                    'Created': po.created_at
+                  }));
+                  
+                  const headers = Object.keys(csvContent[0] || {});
+                  const csvString = [
+                    headers.join(','),
+                    ...csvContent.map(row => headers.map(header => 
+                      `"${(row as any)[header]}"`
+                    ).join(','))
+                  ].join('\n');
+                  
+                  const blob = new Blob([csvString], { type: 'text/csv' });
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `purchase-orders-${new Date().toISOString().split('T')[0]}.csv`;
+                  a.click();
+                  window.URL.revokeObjectURL(url);
+                  
+                  toast({
+                    title: "Export Complete",
+                    description: `Exported ${filteredPOs.length} purchase orders to CSV`,
+                  });
+                }}
+              >
                 <Download className="h-4 w-4" />
-                Export
+                Export CSV
               </Button>
             </div>
           </div>
@@ -201,14 +277,35 @@ const PurchaseOrders = () => {
                           <Edit className="h-4 w-4" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="gap-2">
+                        <DropdownMenuItem 
+                          className="gap-2"
+                          onClick={() => {
+                            toast({
+                              title: "Coming Soon",
+                              description: "PDF generation feature will be available soon",
+                            });
+                          }}
+                        >
                           <FileText className="h-4 w-4" />
-                          Generate PDF
+                          Generate PDF (Soon)
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="gap-2 text-destructive">
-                          <Trash2 className="h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
+                        {po.status === 'draft' ? (
+                          <DropdownMenuItem 
+                            className="gap-2 text-destructive"
+                            onClick={() => handleDeleteOrVoidAction(po)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem 
+                            className="gap-2 text-amber-600"
+                            onClick={() => handleDeleteOrVoidAction(po)}
+                          >
+                            <Ban className="h-4 w-4" />
+                            Void
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -248,6 +345,20 @@ const PurchaseOrders = () => {
         open={editDialogOpen} 
         onOpenChange={setEditDialogOpen} 
         purchaseOrder={selectedPO}
+      />
+
+      <DeletePurchaseOrderDialog 
+        open={deleteDialogOpen} 
+        onOpenChange={setDeleteDialogOpen} 
+        onConfirm={handleDeletePO}
+        poNumber={selectedPO?.po_number || ""}
+      />
+
+      <VoidPurchaseOrderDialog 
+        open={voidDialogOpen} 
+        onOpenChange={setVoidDialogOpen} 
+        onConfirm={handleVoidPO}
+        poNumber={selectedPO?.po_number || ""}
       />
     </div>
   );

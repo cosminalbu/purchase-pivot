@@ -102,6 +102,16 @@ export const usePurchaseOrders = () => {
 
   const deletePurchaseOrder = async (id: string) => {
     try {
+      // First check if the PO is in draft status
+      const po = purchaseOrders.find(p => p.id === id);
+      if (!po) {
+        throw new Error('Purchase order not found');
+      }
+      
+      if (po.status !== 'draft') {
+        throw new Error('Only draft purchase orders can be deleted. Use void instead for non-draft orders.');
+      }
+
       const { error } = await supabase
         .from('purchase_orders')
         .delete()
@@ -118,7 +128,38 @@ export const usePurchaseOrders = () => {
       console.error('Error deleting purchase order:', error);
       toast({
         title: "Error",
-        description: "Failed to delete purchase order",
+        description: error instanceof Error ? error.message : "Failed to delete purchase order",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const voidPurchaseOrder = async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('purchase_orders')
+        .update({ status: 'voided' })
+        .eq('id', id)
+        .select(`
+          *,
+          supplier:suppliers(*)
+        `)
+        .single();
+
+      if (error) throw error;
+      
+      setPurchaseOrders(prev => prev.map(po => po.id === id ? data : po));
+      toast({
+        title: "Success",
+        description: "Purchase order voided successfully",
+      });
+      return data;
+    } catch (error) {
+      console.error('Error voiding purchase order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to void purchase order",
         variant: "destructive",
       });
       throw error;
@@ -135,6 +176,7 @@ export const usePurchaseOrders = () => {
     addPurchaseOrder,
     updatePurchaseOrder,
     deletePurchaseOrder,
+    voidPurchaseOrder,
     refetch: fetchPurchaseOrders
   };
 };
