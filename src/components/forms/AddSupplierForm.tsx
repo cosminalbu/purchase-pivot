@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Plus } from "lucide-react";
 import { useSuppliers } from "@/hooks/useSuppliers";
 
@@ -22,6 +23,7 @@ const supplierSchema = z.object({
   email: z.string().email("Invalid email").optional().or(z.literal("")),
   website: z.string().optional(),
   status: z.enum(["active", "inactive"]).default("active"),
+  is_gst_registered: z.boolean().default(true),
 });
 
 type SupplierFormData = z.infer<typeof supplierSchema>;
@@ -44,6 +46,7 @@ export const AddSupplierForm = () => {
       email: "",
       website: "",
       status: "active",
+      is_gst_registered: true,
     },
   });
 
@@ -62,6 +65,7 @@ export const AddSupplierForm = () => {
         phone: data.phone || null,
         email: data.email || null,
         website: data.website || null,
+        is_gst_registered: data.is_gst_registered,
       };
       await addSupplier(supplierData);
       form.reset();
@@ -249,6 +253,29 @@ export const AddSupplierForm = () => {
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="is_gst_registered"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>
+                      GST Registered
+                    </FormLabel>
+                    <p className="text-sm text-muted-foreground">
+                      Check if this supplier is registered for GST
+                    </p>
+                  </div>
+                </FormItem>
+              )}
+            />
 
             <div className="flex justify-end space-x-2">
               <Button

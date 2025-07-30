@@ -11,6 +11,7 @@ export interface Supplier {
   email: string | null;
   website: string | null;
   status: 'active' | 'inactive';
+  is_gst_registered: boolean;
   created_at: string;
   updated_at: string;
 }

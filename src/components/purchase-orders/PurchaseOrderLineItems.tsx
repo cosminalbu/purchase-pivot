@@ -1,15 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Trash2, Plus } from "lucide-react";
 
 export interface LineItem {
@@ -25,12 +16,14 @@ interface PurchaseOrderLineItemsProps {
   lineItems: LineItem[];
   onLineItemsChange: (lineItems: LineItem[]) => void;
   disabled?: boolean;
+  supplierGstRegistered?: boolean;
 }
 
 export const PurchaseOrderLineItems = ({ 
   lineItems, 
   onLineItemsChange, 
-  disabled = false 
+  disabled = false,
+  supplierGstRegistered = true
 }: PurchaseOrderLineItemsProps) => {
   const [newItem, setNewItem] = useState<Omit<LineItem, 'id' | 'line_total'>>({
     item_description: "",
@@ -88,24 +81,18 @@ export const PurchaseOrderLineItems = ({
   };
 
   const subtotal = lineItems.reduce((sum, item) => sum + item.line_total, 0);
-  const taxAmount = subtotal * 0.1; // 10% GST
+  const taxAmount = supplierGstRegistered ? subtotal * 0.1 : 0; // 10% GST only if supplier is GST registered
   const totalAmount = subtotal + taxAmount;
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <Label className="text-base font-medium">Line Items</Label>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={addLineItem}
-          disabled={disabled || !newItem.item_description.trim()}
-          className="gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          Add Item
-        </Button>
+      {/* Table Headers */}
+      <div className="grid grid-cols-12 gap-2 text-sm font-medium text-muted-foreground">
+        <div className="col-span-5">Description</div>
+        <div className="col-span-2">Quantity</div>
+        <div className="col-span-2">Unit Price</div>
+        <div className="col-span-2">Line Total</div>
+        <div className="col-span-1">Actions</div>
       </div>
 
       {/* Add New Item Form */}
@@ -144,72 +131,72 @@ export const PurchaseOrderLineItems = ({
             {formatCurrency(calculateLineTotal(newItem.quantity, newItem.unit_price))}
           </div>
         </div>
-        <div className="col-span-1"></div>
+        <div className="col-span-1">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={addLineItem}
+            disabled={disabled || !newItem.item_description.trim()}
+            className="gap-2"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
-      {/* Line Items Table */}
+      {/* Line Items */}
       {lineItems.length > 0 && (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[40%]">Description</TableHead>
-              <TableHead className="w-[15%]">Quantity</TableHead>
-              <TableHead className="w-[15%]">Unit Price</TableHead>
-              <TableHead className="w-[15%]">Line Total</TableHead>
-              <TableHead className="w-[15%]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {lineItems.map((item, index) => (
-              <TableRow key={item.id || index}>
-                <TableCell>
-                  <Input
-                    value={item.item_description}
-                    onChange={(e) => updateLineItem(index, 'item_description', e.target.value)}
-                    disabled={disabled}
-                    className="border-0 p-0 h-auto"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={item.quantity}
-                    onChange={(e) => updateLineItem(index, 'quantity', parseInt(e.target.value) || 1)}
-                    disabled={disabled}
-                    className="border-0 p-0 h-auto"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={item.unit_price}
-                    onChange={(e) => updateLineItem(index, 'unit_price', parseFloat(e.target.value) || 0)}
-                    disabled={disabled}
-                    className="border-0 p-0 h-auto"
-                  />
-                </TableCell>
-                <TableCell className="font-medium">
-                  {formatCurrency(item.line_total)}
-                </TableCell>
-                <TableCell>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeLineItem(index)}
-                    disabled={disabled}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <div className="space-y-2">
+          {lineItems.map((item, index) => (
+            <div key={item.id || index} className="grid grid-cols-12 gap-2 p-2 border rounded-lg">
+              <div className="col-span-5">
+                <Input
+                  value={item.item_description}
+                  onChange={(e) => updateLineItem(index, 'item_description', e.target.value)}
+                  disabled={disabled}
+                  className="border-0 p-0 h-auto"
+                />
+              </div>
+              <div className="col-span-2">
+                <Input
+                  type="number"
+                  min="1"
+                  value={item.quantity}
+                  onChange={(e) => updateLineItem(index, 'quantity', parseInt(e.target.value) || 1)}
+                  disabled={disabled}
+                  className="border-0 p-0 h-auto"
+                />
+              </div>
+              <div className="col-span-2">
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={item.unit_price}
+                  onChange={(e) => updateLineItem(index, 'unit_price', parseFloat(e.target.value) || 0)}
+                  disabled={disabled}
+                  className="border-0 p-0 h-auto"
+                />
+              </div>
+              <div className="col-span-2 flex items-center text-sm font-medium">
+                {formatCurrency(item.line_total)}
+              </div>
+              <div className="col-span-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeLineItem(index)}
+                  disabled={disabled}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
       {/* Totals */}
@@ -220,7 +207,7 @@ export const PurchaseOrderLineItems = ({
             <span>{formatCurrency(subtotal)}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span>GST (10%):</span>
+            <span>{supplierGstRegistered ? 'GST (10%):' : 'No GST:'}</span>
             <span>{formatCurrency(taxAmount)}</span>
           </div>
           <div className="flex justify-between font-medium text-base border-t pt-2">

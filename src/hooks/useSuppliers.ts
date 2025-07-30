@@ -145,12 +145,17 @@ export const useSuppliers = () => {
     };
   }, []);
 
+  const getActiveSuppliers = () => {
+    return suppliers.filter(supplier => supplier.status === 'active');
+  };
+
   return {
     suppliers,
     loading,
     addSupplier,
     updateSupplier,
     deleteSupplier,
-    refetch: fetchSuppliers
+    refetch: fetchSuppliers,
+    getActiveSuppliers
   };
 };

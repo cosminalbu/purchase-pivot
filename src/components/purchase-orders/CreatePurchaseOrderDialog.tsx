@@ -58,7 +58,8 @@ interface CreatePurchaseOrderDialogProps {
 export const CreatePurchaseOrderDialog = ({ open, onOpenChange }: CreatePurchaseOrderDialogProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
-  const { suppliers } = useSuppliers();
+  const { getActiveSuppliers } = useSuppliers();
+  const activeSuppliers = getActiveSuppliers();
   const { addPurchaseOrder } = usePurchaseOrders();
   const { toast } = useToast();
 
@@ -83,9 +84,13 @@ export const CreatePurchaseOrderDialog = ({ open, onOpenChange }: CreatePurchase
 
     setIsLoading(true);
     try {
+      // Find selected supplier to get GST status
+      const selectedSupplier = activeSuppliers.find(s => s.id === data.supplier_id);
+      const isGstRegistered = selectedSupplier?.is_gst_registered ?? true;
+      
       // Calculate totals
       const subtotal = lineItems.reduce((sum, item) => sum + item.line_total, 0);
-      const tax_amount = subtotal * 0.1; // 10% GST
+      const tax_amount = isGstRegistered ? subtotal * 0.1 : 0; // 10% GST only if supplier is GST registered
       const total_amount = subtotal + tax_amount;
 
       // Create the purchase order
@@ -179,7 +184,7 @@ export const CreatePurchaseOrderDialog = ({ open, onOpenChange }: CreatePurchase
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {suppliers.map((supplier) => (
+                        {activeSuppliers.map((supplier) => (
                           <SelectItem key={supplier.id} value={supplier.id}>
                             {supplier.company_name}
                           </SelectItem>
@@ -300,6 +305,7 @@ export const CreatePurchaseOrderDialog = ({ open, onOpenChange }: CreatePurchase
               lineItems={lineItems}
               onLineItemsChange={setLineItems}
               disabled={isLoading}
+              supplierGstRegistered={form.watch('supplier_id') ? activeSuppliers.find(s => s.id === form.watch('supplier_id'))?.is_gst_registered ?? true : true}
             />
 
             <div className="flex justify-end gap-2 pt-4">
