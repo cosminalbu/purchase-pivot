@@ -30,12 +30,12 @@ export const generatePurchaseOrderPDF = async (
   let yPosition = 20
 
   // Header - Company Name
-  doc.setFontSize(18)
+  doc.setFontSize(16)
   doc.setTextColor(33, 33, 33)
   doc.text(companyName, 20, yPosition)
   
-  yPosition += 8
-  doc.setFontSize(10)
+  yPosition += 6
+  doc.setFontSize(9)
   doc.setTextColor(100, 100, 100)
   const companyLines = companyAddress.split('\n')
   companyLines.forEach(line => {
@@ -45,11 +45,6 @@ export const generatePurchaseOrderPDF = async (
   doc.text(`Phone: ${companyPhone}`, 20, yPosition)
   yPosition += 4
   doc.text(`Email: ${companyEmail}`, 20, yPosition)
-  
-  // Purchase Order Title - Center
-  doc.setFontSize(24)
-  doc.setTextColor(33, 33, 33)
-  doc.text('PURCHASE ORDER', pageWidth / 2, 35, { align: 'center' })
   
   // Date and PO Number boxes - Top Right
   const rightColumnX = pageWidth - 85
@@ -94,35 +89,40 @@ export const generatePurchaseOrderPDF = async (
     doc.text(supplier.company_name, 20, yPosition)
     yPosition += 5
     
-    if (supplier.abn) {
-      doc.text(`ABN: ${supplier.abn}`, 20, yPosition)
-      yPosition += 5
-    }
-    
     if (supplier.address_line_1) {
       doc.text(supplier.address_line_1, 20, yPosition)
-      yPosition += 5
+      yPosition += 4
       
       if (supplier.address_line_2) {
         doc.text(supplier.address_line_2, 20, yPosition)
-        yPosition += 5
+        yPosition += 4
       }
       
       const addressParts = [supplier.city, supplier.state, supplier.postal_code].filter(Boolean)
       if (addressParts.length > 0) {
         doc.text(addressParts.join(', '), 20, yPosition)
-        yPosition += 5
+        yPosition += 4
       }
     }
     
     if (supplier.phone) {
       doc.text(`Phone: ${supplier.phone}`, 20, yPosition)
-      yPosition += 5
+      yPosition += 4
     }
     
     if (supplier.email) {
       doc.text(`Email: ${supplier.email}`, 20, yPosition)
-      yPosition += 5
+      yPosition += 4
+    }
+    
+    if (supplier.website) {
+      doc.text(`Website: ${supplier.website}`, 20, yPosition)
+      yPosition += 4
+    }
+    
+    if (supplier.abn) {
+      doc.text(`ABN: ${supplier.abn}`, 20, yPosition)
+      yPosition += 4
     }
   }
 
@@ -144,7 +144,7 @@ export const generatePurchaseOrderPDF = async (
   })
   
   // Line Items Table
-  yPosition = Math.max(yPosition, 130) // Ensure we have enough space
+  yPosition = Math.max(yPosition, 85) // Reduce whitespace
   
   if (includeLineItems && lineItems.length > 0) {
     const tableData = lineItems.map((item, index) => [
@@ -184,39 +184,44 @@ export const generatePurchaseOrderPDF = async (
       }
     })
     
-    // Totals section
-    const finalY = (doc as any).lastAutoTable.finalY + 15
-    const totalsX = pageWidth - 70
+    // Totals section - styled to match the table
+    const finalY = (doc as any).lastAutoTable.finalY + 10
+    const totalsTableX = pageWidth - 90
     
-    // Totals box
-    doc.setDrawColor(200, 200, 200)
-    doc.setLineWidth(0.5)
-    doc.rect(totalsX - 5, finalY - 5, 65, 50)
-    
-    doc.setFontSize(10)
-    doc.setTextColor(100, 100, 100)
-    
-    // Subtotal
-    doc.text('SUBTOTAL', totalsX, finalY + 5)
-    doc.text(`$${parseFloat(purchaseOrder.subtotal?.toString() || '0').toFixed(2)}`, totalsX + 35, finalY + 5, { align: 'right' })
-    
-    // Tax (GST)
-    doc.text('TAX', totalsX, finalY + 12)
-    doc.text(`$${parseFloat(purchaseOrder.tax_amount?.toString() || '0').toFixed(2)}`, totalsX + 35, finalY + 12, { align: 'right' })
-    
-    // Shipping
-    doc.text('SHIPPING', totalsX, finalY + 19)
-    doc.text('$0.00', totalsX + 35, finalY + 19, { align: 'right' })
-    
-    // Other
-    doc.text('OTHER', totalsX, finalY + 26)
-    doc.text('$0.00', totalsX + 35, finalY + 26, { align: 'right' })
-    
-    // Total
-    doc.setFontSize(12)
-    doc.setTextColor(33, 33, 33)
-    doc.text('TOTAL', totalsX, finalY + 36)
-    doc.text(`$${parseFloat(purchaseOrder.total_amount.toString()).toFixed(2)}`, totalsX + 35, finalY + 36, { align: 'right' })
+    // Create totals as a styled table
+    autoTable(doc, {
+      startY: finalY,
+      head: [],
+      body: [
+        ['SUBTOTAL', `$${parseFloat(purchaseOrder.subtotal?.toString() || '0').toFixed(2)}`],
+        ['TAX', `$${parseFloat(purchaseOrder.tax_amount?.toString() || '0').toFixed(2)}`],
+        ['SHIPPING', '$0.00'],
+        ['OTHER', '$0.00'],
+        ['TOTAL', `$${parseFloat(purchaseOrder.total_amount.toString()).toFixed(2)}`]
+      ],
+      theme: 'grid',
+      bodyStyles: {
+        fontSize: 9,
+        textColor: [33, 33, 33],
+        fillColor: [250, 250, 250]
+      },
+      columnStyles: {
+        0: { cellWidth: 25, halign: 'left', fontStyle: 'bold' },
+        1: { cellWidth: 25, halign: 'right' }
+      },
+      margin: { left: totalsTableX },
+      alternateRowStyles: {
+        fillColor: [240, 240, 240]
+      },
+      didParseCell: function (data) {
+        // Style the TOTAL row differently
+        if (data.row.index === 4) {
+          data.cell.styles.fontStyle = 'bold'
+          data.cell.styles.fontSize = 10
+          data.cell.styles.fillColor = [220, 220, 220]
+        }
+      }
+    })
     
     // Comments section
     const commentsY = finalY + 55
