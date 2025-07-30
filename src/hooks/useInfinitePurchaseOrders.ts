@@ -24,6 +24,8 @@ export const useInfinitePurchaseOrders = ({
           id,
           po_number,
           supplier_id,
+          subtotal,
+          tax_amount,
           total_amount,
           status,
           order_date,

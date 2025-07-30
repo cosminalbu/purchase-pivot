@@ -44,6 +44,7 @@ export interface PurchaseOrder {
   created_at: string;
   updated_at: string;
   supplier?: Supplier;
+  suppliers?: Supplier;
 }
 
 export interface PurchaseOrderLineItem {

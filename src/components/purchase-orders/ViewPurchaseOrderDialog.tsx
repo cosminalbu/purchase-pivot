@@ -73,7 +73,7 @@ export function ViewPurchaseOrderDialog({
             </div>
             <div>
               <h3 className="font-semibold text-sm text-muted-foreground mb-2">Supplier</h3>
-              <p className="text-lg">{purchaseOrder.supplier?.company_name || 'Unknown Supplier'}</p>
+              <p className="text-lg">{purchaseOrder.suppliers?.company_name || 'Unknown Supplier'}</p>
             </div>
             <div>
               <h3 className="font-semibold text-sm text-muted-foreground mb-2">Order Date</h3>
