@@ -46,25 +46,15 @@ export const generatePurchaseOrderPDF = async (
   yPosition += 4
   doc.text(`Email: ${companyEmail}`, 20, yPosition)
   
-  // Date and PO Number boxes - Top Right
+  // PO Number and Date boxes - Top Right (reordered)
   const rightColumnX = pageWidth - 85
   yPosition = 20
   
-  // Draw boxes for date and PO number
+  // Draw boxes for PO number and date
   doc.setDrawColor(200, 200, 200)
   doc.setLineWidth(0.5)
   
-  // Date box
-  doc.rect(rightColumnX, yPosition, 80, 12)
-  doc.setFontSize(8)
-  doc.setTextColor(100, 100, 100)
-  doc.text('DATE', rightColumnX + 2, yPosition + 4)
-  doc.setFontSize(10)
-  doc.setTextColor(33, 33, 33)
-  doc.text(purchaseOrder.order_date ? new Date(purchaseOrder.order_date).toLocaleDateString('en-AU') : new Date().toLocaleDateString('en-AU'), rightColumnX + 2, yPosition + 9)
-  
-  // PO Number box
-  yPosition += 15
+  // PO Number box (now first)
   doc.rect(rightColumnX, yPosition, 80, 12)
   doc.setFontSize(8)
   doc.setTextColor(100, 100, 100)
@@ -72,6 +62,23 @@ export const generatePurchaseOrderPDF = async (
   doc.setFontSize(10)
   doc.setTextColor(33, 33, 33)
   doc.text(purchaseOrder.po_number, rightColumnX + 2, yPosition + 9)
+  
+  // Date box (now below PO number, with both order and delivery dates)
+  yPosition += 15
+  doc.rect(rightColumnX, yPosition, 80, 22) // Increased height for two dates
+  doc.setFontSize(8)
+  doc.setTextColor(100, 100, 100)
+  doc.text('ORDER DATE', rightColumnX + 2, yPosition + 4)
+  doc.setFontSize(9)
+  doc.setTextColor(33, 33, 33)
+  doc.text(purchaseOrder.order_date ? new Date(purchaseOrder.order_date).toLocaleDateString('en-AU') : new Date().toLocaleDateString('en-AU'), rightColumnX + 2, yPosition + 9)
+  
+  doc.setFontSize(8)
+  doc.setTextColor(100, 100, 100)
+  doc.text('REQUIRED DATE', rightColumnX + 2, yPosition + 15)
+  doc.setFontSize(9)
+  doc.setTextColor(33, 33, 33)
+  doc.text(purchaseOrder.delivery_date ? new Date(purchaseOrder.delivery_date).toLocaleDateString('en-AU') : 'TBD', rightColumnX + 2, yPosition + 20)
   
   // Vendor Section
   yPosition = 60
@@ -126,8 +133,8 @@ export const generatePurchaseOrderPDF = async (
     }
   }
 
-  // Ship To Section
-  const shipToX = pageWidth / 2 + 10
+  // Ship To Section - aligned with right edge of items table
+  const shipToX = 140 // Align with right edge of items table (20 + 120 column width = 140)
   yPosition = 60
   doc.setFontSize(12)
   doc.setTextColor(33, 33, 33)
@@ -184,9 +191,9 @@ export const generatePurchaseOrderPDF = async (
       }
     })
     
-    // Totals section - styled to match the table
+    // Totals section - styled to match the table and aligned with right edge
     const finalY = (doc as any).lastAutoTable.finalY + 10
-    const totalsTableX = pageWidth - 90
+    const totalsTableX = 140 // Align with right edge of items table (20 margin + 120 column width = 140)
     
     // Create totals as a styled table
     autoTable(doc, {

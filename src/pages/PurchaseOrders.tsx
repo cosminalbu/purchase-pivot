@@ -142,15 +142,30 @@ const PurchaseOrders = () => {
     try {
       const loadingToast = toast.loading({ title: "Generating PDF..." });
       
-      // Fetch line items for the specific purchase order
+      // Fetch complete supplier details and line items for the specific purchase order
       const { supabase } = await import("@/integrations/supabase/client");
+      
+      // Fetch supplier details separately to ensure we have complete data
+      const { data: supplier } = await supabase
+        .from('suppliers')
+        .select('*')
+        .eq('id', po.supplier_id)
+        .single();
+      
       const { data: lineItems } = await supabase
         .from('purchase_order_line_items')
         .select('*')
         .eq('purchase_order_id', po.id)
         .order('created_at', { ascending: true });
       
-      await downloadPurchaseOrderPDF(po, lineItems || []);
+      // Create enhanced PO object with complete supplier data
+      const enhancedPO = {
+        ...po,
+        supplier: supplier,
+        suppliers: supplier
+      };
+      
+      await downloadPurchaseOrderPDF(enhancedPO, lineItems || []);
       
       toast.dismiss(loadingToast);
       toast.success({ title: "PDF Generated Successfully" });
