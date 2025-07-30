@@ -1,5 +1,9 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import DashboardCard from "@/components/DashboardCard";
 import StatusBadge, { POStatus } from "@/components/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,17 +15,35 @@ import {
   TrendingUp,
   Eye,
   Edit,
-  MoreHorizontal
+  MoreHorizontal,
+  Trash2,
+  Ban
 } from "lucide-react";
 import { useDashboardStatsQuery } from "@/hooks/useDashboardStatsQuery";
 import { usePurchaseOrders } from "@/hooks/usePurchaseOrders";
 import { useEnhancedToast } from "@/hooks/useEnhancedToast";
+import { useSuppliers } from "@/hooks/useSuppliers";
 import { ActivityFeed } from "@/components/ui/activity-feed";
+import { CreatePurchaseOrderDialog } from "@/components/purchase-orders/CreatePurchaseOrderDialog";
+import { ViewPurchaseOrderDialog } from "@/components/purchase-orders/ViewPurchaseOrderDialog";
+import { EditPurchaseOrderDialog } from "@/components/purchase-orders/EditPurchaseOrderDialog";
+import { DeletePurchaseOrderDialog } from "@/components/purchase-orders/DeletePurchaseOrderDialog";
+import { VoidPurchaseOrderDialog } from "@/components/purchase-orders/VoidPurchaseOrderDialog";
+import { AddSupplierForm } from "@/components/forms/AddSupplierForm";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const { data: stats, isLoading: statsLoading, error } = useDashboardStatsQuery();
-  const { purchaseOrders, loading: posLoading } = usePurchaseOrders();
+  const { purchaseOrders, loading: posLoading, refetch, deletePurchaseOrder, voidPurchaseOrder } = usePurchaseOrders();
+  const { addSupplier } = useSuppliers();
   const toast = useEnhancedToast();
+
+  // Dialog states
+  const [createPOOpen, setCreatePOOpen] = useState(false);
+  const [viewPOOpen, setViewPOOpen] = useState(false);
+  const [editPOOpen, setEditPOOpen] = useState(false);
+  const [addSupplierOpen, setAddSupplierOpen] = useState(false);
+  const [selectedPO, setSelectedPO] = useState<any>(null);
 
   // Show error toast if query fails
   if (error) {
@@ -45,6 +67,84 @@ const Dashboard = () => {
     }).format(amount);
   };
 
+  // Button handlers
+  const handleCreatePO = () => {
+    setCreatePOOpen(true);
+  };
+
+  const handleViewAll = () => {
+    navigate('/purchase-orders');
+  };
+
+  const handleViewPO = (po: any) => {
+    setSelectedPO(po);
+    setViewPOOpen(true);
+  };
+
+  const handleEditPO = (po: any) => {
+    setSelectedPO(po);
+    setEditPOOpen(true);
+  };
+
+  const handleDeletePO = async (po: any) => {
+    try {
+      await deletePurchaseOrder(po.id);
+      refetch();
+      toast.success({
+        title: "Success",
+        description: "Purchase order deleted successfully"
+      });
+    } catch (error) {
+      toast.error({
+        title: "Error",
+        description: "Failed to delete purchase order"
+      });
+    }
+  };
+
+  const handleVoidPO = async (po: any) => {
+    try {
+      await voidPurchaseOrder(po.id);
+      refetch();
+      toast.success({
+        title: "Success", 
+        description: "Purchase order voided successfully"
+      });
+    } catch (error) {
+      toast.error({
+        title: "Error",
+        description: "Failed to void purchase order"
+      });
+    }
+  };
+
+  const handleAddSupplier = () => {
+    setAddSupplierOpen(true);
+  };
+
+  const handleSupplierAdded = () => {
+    setAddSupplierOpen(false);
+    toast.success({
+      title: "Success",
+      description: "Supplier added successfully"
+    });
+  };
+
+  const handleViewReports = () => {
+    toast.info({
+      title: "Coming Soon",
+      description: "Reports feature is under development"
+    });
+  };
+
+  const handleDialogSuccess = () => {
+    refetch();
+    toast.success({
+      title: "Success",
+      description: "Action completed successfully"
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -55,7 +155,7 @@ const Dashboard = () => {
             Welcome back! Here's what's happening with your purchase orders.
           </p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={handleCreatePO}>
           <FileText className="h-4 w-4" />
           Create Purchase Order
         </Button>
@@ -103,7 +203,7 @@ const Dashboard = () => {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               Recent Purchase Orders
-              <Button variant="ghost" size="sm" className="text-primary">
+              <Button variant="ghost" size="sm" className="text-primary" onClick={handleViewAll}>
                 View all
               </Button>
             </CardTitle>
@@ -136,7 +236,7 @@ const Dashboard = () => {
               <div className="text-center py-8">
                 <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">No purchase orders yet</p>
-                <Button className="mt-2">Create your first purchase order</Button>
+                <Button className="mt-2" onClick={handleCreatePO}>Create your first purchase order</Button>
               </div>
             ) : (
               <div className="space-y-4">
@@ -161,15 +261,33 @@ const Dashboard = () => {
                     <div className="text-right space-y-1">
                       <p className="font-semibold text-foreground">{formatCurrency(po.total_amount)}</p>
                       <div className="flex items-center space-x-1">
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" onClick={() => handleViewPO(po)}>
                           <Eye className="h-3 w-3" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" onClick={() => handleEditPO(po)}>
                           <Edit className="h-3 w-3" />
                         </Button>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="h-3 w-3" />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="h-3 w-3" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            {po.status === 'draft' && (
+                              <DropdownMenuItem onClick={() => handleDeletePO(po)}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            )}
+                            {!['cancelled', 'draft'].includes(po.status) && (
+                              <DropdownMenuItem onClick={() => handleVoidPO(po)}>
+                                <Ban className="mr-2 h-4 w-4" />
+                                Void
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
                   </div>
@@ -191,15 +309,15 @@ const Dashboard = () => {
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button className="w-full justify-start gap-2" variant="outline">
+              <Button className="w-full justify-start gap-2" variant="outline" onClick={handleCreatePO}>
                 <FileText className="h-4 w-4" />
                 Create Purchase Order
               </Button>
-              <Button className="w-full justify-start gap-2" variant="outline">
+              <Button className="w-full justify-start gap-2" variant="outline" onClick={handleAddSupplier}>
                 <Users className="h-4 w-4" />
                 Add New Supplier
               </Button>
-              <Button className="w-full justify-start gap-2" variant="outline">
+              <Button className="w-full justify-start gap-2" variant="outline" onClick={handleViewReports}>
                 <TrendingUp className="h-4 w-4" />
                 View Reports
               </Button>
@@ -207,6 +325,39 @@ const Dashboard = () => {
           </Card>
         </div>
       </div>
+
+      {/* Dialogs */}
+      <CreatePurchaseOrderDialog
+        open={createPOOpen}
+        onOpenChange={setCreatePOOpen}
+      />
+
+      {selectedPO && (
+        <>
+          <ViewPurchaseOrderDialog
+            open={viewPOOpen}
+            onOpenChange={setViewPOOpen}
+            purchaseOrder={selectedPO}
+          />
+          
+          <EditPurchaseOrderDialog
+            open={editPOOpen}
+            onOpenChange={setEditPOOpen}
+            purchaseOrder={selectedPO}
+          />
+        </>
+      )}
+
+      <Dialog open={addSupplierOpen} onOpenChange={setAddSupplierOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Supplier</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[70vh] overflow-y-auto">
+            <AddSupplierForm />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
