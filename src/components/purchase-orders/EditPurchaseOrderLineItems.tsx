@@ -18,6 +18,7 @@ interface EditPurchaseOrderLineItemsProps {
   purchaseOrderId: string;
   disabled?: boolean;
   onTotalsChange?: () => void;
+  supplierGstRegistered?: boolean;
 }
 
 interface EditingLineItem extends Partial<PurchaseOrderLineItem> {
@@ -29,9 +30,10 @@ interface EditingLineItem extends Partial<PurchaseOrderLineItem> {
 export const EditPurchaseOrderLineItems = ({ 
   purchaseOrderId, 
   disabled = false,
-  onTotalsChange
+  onTotalsChange,
+  supplierGstRegistered = true
 }: EditPurchaseOrderLineItemsProps) => {
-  const { lineItems, addLineItem, updateLineItem, deleteLineItem, totals } = usePurchaseOrderLineItems(purchaseOrderId);
+  const { lineItems, addLineItem, updateLineItem, deleteLineItem, totals } = usePurchaseOrderLineItems(purchaseOrderId, supplierGstRegistered);
   const [editingItems, setEditingItems] = useState<{ [key: string]: EditingLineItem }>({});
   const [newItem, setNewItem] = useState<EditingLineItem>({
     item_description: "",
@@ -145,19 +147,13 @@ export const EditPurchaseOrderLineItems = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <Label className="text-base font-medium">Line Items</Label>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={addNewLineItem}
-          disabled={disabled || !newItem.item_description?.trim()}
-          className="gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          Add Item
-        </Button>
+      {/* Table Headers */}
+      <div className="grid grid-cols-12 gap-2 text-sm font-medium text-muted-foreground">
+        <div className="col-span-5">Description</div>
+        <div className="col-span-2">Quantity</div>
+        <div className="col-span-2">Unit Price</div>
+        <div className="col-span-2">Line Total</div>
+        <div className="col-span-1">Actions</div>
       </div>
 
       {/* Add New Item Form */}
@@ -196,7 +192,19 @@ export const EditPurchaseOrderLineItems = ({
             {formatCurrency(calculateLineTotal(newItem.quantity || 1, newItem.unit_price || 0))}
           </div>
         </div>
-        <div className="col-span-1"></div>
+        <div className="col-span-1">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={addNewLineItem}
+            disabled={disabled || !newItem.item_description?.trim()}
+            className="gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Add
+          </Button>
+        </div>
       </div>
 
       {/* Line Items Table */}
@@ -340,7 +348,7 @@ export const EditPurchaseOrderLineItems = ({
             <span>{formatCurrency(totals.subtotal)}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span>GST (10%):</span>
+            <span>{supplierGstRegistered ? 'GST (10%):' : 'No GST:'}</span>
             <span>{formatCurrency(totals.taxAmount)}</span>
           </div>
           <div className="flex justify-between font-medium text-base border-t pt-2">

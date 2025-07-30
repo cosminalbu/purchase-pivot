@@ -260,7 +260,7 @@ export const EditPurchaseOrderDialog = ({
                   name="delivery_date"
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
-                      <FormLabel>Delivery Date</FormLabel>
+                      <FormLabel>Required Date</FormLabel>
                       <Popover>
                         <PopoverTrigger asChild>
                           <FormControl>
@@ -321,6 +321,7 @@ export const EditPurchaseOrderDialog = ({
                 purchaseOrderId={purchaseOrder.id}
                 disabled={isLoading}
                 onTotalsChange={refetch}
+                supplierGstRegistered={suppliers.find(s => s.id === form.watch('supplier_id'))?.is_gst_registered ?? true}
               />
 
               <div className="flex justify-end gap-2 pt-4">

@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { PurchaseOrderLineItem } from '@/lib/supabase-types';
 import { useToast } from '@/hooks/use-toast';
 
-export const usePurchaseOrderLineItems = (purchaseOrderId?: string) => {
+export const usePurchaseOrderLineItems = (purchaseOrderId?: string, applyGst: boolean = true) => {
   const [lineItems, setLineItems] = useState<PurchaseOrderLineItem[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -115,7 +115,7 @@ export const usePurchaseOrderLineItems = (purchaseOrderId?: string) => {
 
   // Calculate totals
   const subtotal = lineItems.reduce((sum, item) => sum + item.line_total, 0);
-  const taxAmount = subtotal * 0.1; // 10% GST
+  const taxAmount = applyGst ? subtotal * 0.1 : 0; // 10% GST only if supplier is GST registered
   const totalAmount = subtotal + taxAmount;
 
   useEffect(() => {
