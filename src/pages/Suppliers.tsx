@@ -141,14 +141,19 @@ const Suppliers = () => {
       </div>
 
       <EnhancedSearch
-        searchQuery={searchQuery}
+        searchValue={searchQuery}
         onSearchChange={setSearchQuery}
-        selectedFilters={selectedFilters}
-        onFiltersChange={setSelectedFilters}
-        filterOptions={filterOptions}
         placeholder="Search suppliers by name, ABN, email, phone, or location..."
-        resultCount={filteredSuppliers.length}
-        totalCount={suppliers.length}
+        filters={[
+          { key: 'status', label: 'Status', type: 'select', options: [
+            { value: 'active', label: 'Active' },
+            { value: 'inactive', label: 'Inactive' }
+          ]},
+          { key: 'gst', label: 'GST Registration', type: 'select', options: [
+            { value: 'registered', label: 'GST Registered' },
+            { value: 'not-registered', label: 'No GST' }
+          ]}
+        ]}
       />
 
       {/* Suppliers Table/Cards */}
@@ -254,47 +259,86 @@ const Suppliers = () => {
       ) : (
         <div className="space-y-4">
           {filteredSuppliers.map((supplier) => (
-            <MobileCard
-              key={supplier.id}
-              title={supplier.company_name}
-              subtitle={supplier.abn ? `ABN: ${supplier.abn}` : undefined}
-              badges={[
-                {
-                  text: supplier.status.charAt(0).toUpperCase() + supplier.status.slice(1),
-                  variant: supplier.status === 'active' ? 'default' : 'secondary'
-                },
-                ...(supplier.is_gst_registered ? [{ text: 'GST Registered', variant: 'outline' as const }] : [])
-              ]}
-              metadata={[
-                ...(supplier.email ? [{ label: 'Email', value: supplier.email }] : []),
-                ...(supplier.phone ? [{ label: 'Phone', value: supplier.phone }] : []),
-                ...([supplier.city, supplier.state].filter(Boolean).length > 0 
-                  ? [{ label: 'Location', value: [supplier.city, supplier.state].filter(Boolean).join(', ') }] : [])
-              ]}
-              actions={[
-                {
-                  label: 'View',
-                  onClick: () => {
-                    setSelectedSupplier(supplier);
-                    setViewDialogOpen(true);
-                  }
-                },
-                {
-                  label: 'Edit',
-                  onClick: () => {
-                    setSelectedSupplier(supplier);
-                    setEditDialogOpen(true);
-                  }
-                },
-                {
-                  label: 'Contacts',
-                  onClick: () => {
-                    setSelectedSupplier(supplier);
-                    setContactsDialogOpen(true);
-                  }
-                }
-              ]}
-            />
+            <MobileCard key={supplier.id}>
+              <div className="space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-semibold text-foreground">{supplier.company_name}</h3>
+                    {supplier.abn && (
+                      <p className="text-sm text-muted-foreground">ABN: {supplier.abn}</p>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      supplier.status === 'active' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {supplier.status.charAt(0).toUpperCase() + supplier.status.slice(1)}
+                    </span>
+                    {supplier.is_gst_registered && (
+                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                        GST
+                      </span>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="space-y-1">
+                  {supplier.email && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Email:</span>
+                      <span className="text-foreground">{supplier.email}</span>
+                    </div>
+                  )}
+                  {supplier.phone && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Phone:</span>
+                      <span className="text-foreground">{supplier.phone}</span>
+                    </div>
+                  )}
+                  {[supplier.city, supplier.state].filter(Boolean).length > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Location:</span>
+                      <span className="text-foreground">{[supplier.city, supplier.state].filter(Boolean).join(', ')}</span>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedSupplier(supplier);
+                      setViewDialogOpen(true);
+                    }}
+                  >
+                    View
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedSupplier(supplier);
+                      setEditDialogOpen(true);
+                    }}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedSupplier(supplier);
+                      setContactsDialogOpen(true);
+                    }}
+                  >
+                    Contacts
+                  </Button>
+                </div>
+              </div>
+            </MobileCard>
           ))}
           {filteredSuppliers.length === 0 && (
             <div className="flex flex-col items-center gap-2 py-8">
