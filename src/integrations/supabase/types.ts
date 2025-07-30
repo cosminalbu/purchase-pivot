@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      profiles: {
+        Row: {
+          created_at: string
+          department: string | null
+          email: string
+          first_name: string
+          id: string
+          is_active: boolean
+          last_name: string
+          phone: string | null
+          role: Database["public"]["Enums"]["user_roles"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department?: string | null
+          email: string
+          first_name: string
+          id: string
+          is_active?: boolean
+          last_name: string
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_roles"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department?: string | null
+          email?: string
+          first_name?: string
+          id?: string
+          is_active?: boolean
+          last_name?: string
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_roles"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       purchase_order_line_items: {
         Row: {
           created_at: string
@@ -230,6 +269,7 @@ export type Database = {
         | "delivered"
         | "cancelled"
       supplier_status: "active" | "inactive"
+      user_roles: "admin" | "manager" | "employee" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -365,6 +405,7 @@ export const Constants = {
         "cancelled",
       ],
       supplier_status: ["active", "inactive"],
+      user_roles: ["admin", "manager", "employee", "viewer"],
     },
   },
 } as const

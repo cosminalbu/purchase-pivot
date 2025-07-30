@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { 
   FileText, 
   Users, 
@@ -10,9 +11,13 @@ import {
   Settings,
   Bell,
   Search,
-  Plus
+  Plus,
+  User,
+  LogOut
 } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface LayoutProps {
   children: ReactNode;
@@ -20,6 +25,8 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
+  const { profile, signOut } = useAuth();
+  const { toast } = useToast();
 
   const navigation = [
     { name: "Dashboard", href: "/", icon: BarChart3 },
@@ -32,6 +39,22 @@ const Layout = ({ children }: LayoutProps) => {
   const isActive = (href: string) => {
     if (href === "/") return location.pathname === "/";
     return location.pathname.startsWith(href);
+  };
+
+  const handleSignOut = async () => {
+    const { error } = await signOut();
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to sign out",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Signed out",
+        description: "You have been successfully signed out",
+      });
+    }
   };
 
   return (
@@ -68,9 +91,35 @@ const Layout = ({ children }: LayoutProps) => {
                 <Bell className="h-4 w-4" />
                 <Badge className="ml-1 bg-status-pending text-white">3</Badge>
               </Button>
-              <Button variant="ghost" size="sm">
-                <Settings className="h-4 w-4" />
-              </Button>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <User className="h-4 w-4" />
+                    {profile?.first_name || 'User'}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">
+                        {profile?.first_name} {profile?.last_name}
+                      </p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {profile?.email}
+                      </p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {profile?.role?.charAt(0).toUpperCase()}{profile?.role?.slice(1)}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>

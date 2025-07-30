@@ -56,3 +56,16 @@ export interface PurchaseOrderLineItem {
   created_at: string;
   updated_at: string;
 }
+
+export interface Profile {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  role: 'admin' | 'manager' | 'employee' | 'viewer';
+  department: string | null;
+  phone: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
