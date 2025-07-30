@@ -101,9 +101,11 @@ export const CreatePurchaseOrderDialog = ({ open, onOpenChange }: CreatePurchase
       };
 
       const purchaseOrder = await addPurchaseOrder(purchaseOrderData);
+      console.log('Created purchase order:', purchaseOrder);
+      console.log('Line items to save:', lineItems);
 
       // Save line items to the database
-      if (purchaseOrder?.id) {
+      if (purchaseOrder?.id && lineItems.length > 0) {
         const lineItemsData = lineItems.map(item => ({
           purchase_order_id: purchaseOrder.id,
           item_description: item.item_description,
@@ -113,13 +115,24 @@ export const CreatePurchaseOrderDialog = ({ open, onOpenChange }: CreatePurchase
           notes: item.notes || null
         }));
 
-        const { error: lineItemsError } = await supabase
+        console.log('Inserting line items:', lineItemsData);
+
+        const { data: insertedLineItems, error: lineItemsError } = await supabase
           .from('purchase_order_line_items')
-          .insert(lineItemsData);
+          .insert(lineItemsData)
+          .select();
 
         if (lineItemsError) {
+          console.error('Line items insertion error:', lineItemsError);
           throw new Error('Failed to save line items');
         }
+
+        console.log('Successfully inserted line items:', insertedLineItems);
+      } else {
+        console.warn('No purchase order ID or no line items to save', { 
+          purchaseOrderId: purchaseOrder?.id, 
+          lineItemsCount: lineItems.length 
+        });
       }
 
       toast({
