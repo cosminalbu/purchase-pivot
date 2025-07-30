@@ -195,7 +195,7 @@ export const CreatePurchaseOrderDialog = ({ open, onOpenChange }: CreatePurchase
                 control={form.control}
                 name="order_date"
                 render={({ field }) => (
-                  <FormItem className="flex flex-col">
+                  <FormItem>
                     <FormLabel>Order Date</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
