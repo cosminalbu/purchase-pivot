@@ -81,7 +81,7 @@ const PurchaseOrders = () => {
   // Enhanced filtering with active filters
   const filteredPOs = purchaseOrders.filter(po => {
     const matchesSearch = po.po_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (po.suppliers?.[0]?.company_name || "").toLowerCase().includes(searchTerm.toLowerCase());
+                         ((po.suppliers as any)?.company_name || "").toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || po.status === statusFilter;
 
     // Apply active filters
@@ -90,7 +90,7 @@ const PurchaseOrders = () => {
         case 'status':
           return po.status === filter.value;
         case 'supplier':
-          return po.suppliers?.[0]?.company_name === filter.value;
+          return (po.suppliers as any)?.company_name === filter.value;
         default:
           return true;
       }
@@ -252,7 +252,7 @@ const PurchaseOrders = () => {
                 onClick={() => {
                   const csvContent = filteredPOs.map(po => ({
                     'PO Number': po.po_number,
-                    'Supplier': po.suppliers?.[0]?.company_name || '',
+                    'Supplier': (po.suppliers as any)?.company_name || '',
                     'Status': po.status,
                     'Amount': po.total_amount,
                     'Order Date': po.order_date || '',
@@ -328,7 +328,7 @@ const PurchaseOrders = () => {
                     <div className="flex justify-between items-start">
                       <div>
                         <h3 className="font-medium text-foreground">{po.po_number}</h3>
-                        <p className="text-sm text-muted-foreground">{po.suppliers?.[0]?.company_name || "—"}</p>
+                        <p className="text-sm text-muted-foreground">{(po.suppliers as any)?.company_name || "—"}</p>
                       </div>
                       <StatusBadge status={po.status as POStatus} />
                     </div>
@@ -431,7 +431,7 @@ const PurchaseOrders = () => {
                     {filteredPOs.map((po) => (
                       <TableRow key={po.id} className="hover:bg-accent">
                         <TableCell className="font-medium">{po.po_number}</TableCell>
-                        <TableCell>{po.suppliers?.[0]?.company_name || "—"}</TableCell>
+                        <TableCell>{(po.suppliers as any)?.company_name || "—"}</TableCell>
                         <TableCell className="font-semibold">{formatCurrency(po.total_amount)}</TableCell>
                         <TableCell>
                           <StatusBadge status={po.status as POStatus} />

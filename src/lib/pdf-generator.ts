@@ -116,16 +116,6 @@ export const generatePurchaseOrderPDF = async (
       doc.text(`Email: ${supplier.email}`, 20, yPosition)
       yPosition += 4
     }
-    
-    if (supplier.website) {
-      doc.text(`Website: ${supplier.website}`, 20, yPosition)
-      yPosition += 4
-    }
-    
-    if (supplier.abn) {
-      doc.text(`ABN: ${supplier.abn}`, 20, yPosition)
-      yPosition += 4
-    }
   }
 
   // Ship To Section - aligned with right edge of items table
