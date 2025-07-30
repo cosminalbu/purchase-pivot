@@ -37,7 +37,7 @@ export const useSupplierContacts = (supplierId: string | null) => {
 
       if (error) throw error;
       
-      setContacts(prev => [...prev, data]);
+      // Real-time subscription will handle state update
       return data;
     } catch (error) {
       console.error('Error adding supplier contact:', error);
@@ -56,9 +56,7 @@ export const useSupplierContacts = (supplierId: string | null) => {
 
       if (error) throw error;
       
-      setContacts(prev => prev.map(contact => 
-        contact.id === contactId ? data : contact
-      ));
+      // Real-time subscription will handle state update
       return data;
     } catch (error) {
       console.error('Error updating supplier contact:', error);
@@ -75,7 +73,7 @@ export const useSupplierContacts = (supplierId: string | null) => {
 
       if (error) throw error;
       
-      setContacts(prev => prev.filter(contact => contact.id !== contactId));
+      // Real-time subscription will handle state update
     } catch (error) {
       console.error('Error deleting supplier contact:', error);
       throw error;
@@ -103,11 +101,24 @@ export const useSupplierContacts = (supplierId: string | null) => {
           console.log('Supplier contacts real-time update:', payload);
           
           if (payload.eventType === 'INSERT') {
-            setContacts(prev => [...prev, payload.new as SupplierContact]);
+            setContacts(prev => {
+              const newContact = payload.new as SupplierContact;
+              // Avoid duplicates and maintain proper ordering
+              if (!prev.find(c => c.id === newContact.id)) {
+                return [...prev, newContact].sort((a, b) => {
+                  if (a.is_primary !== b.is_primary) return b.is_primary ? 1 : -1;
+                  return a.first_name.localeCompare(b.first_name);
+                });
+              }
+              return prev;
+            });
           } else if (payload.eventType === 'UPDATE') {
             setContacts(prev => prev.map(contact => 
               contact.id === payload.new.id ? payload.new as SupplierContact : contact
-            ));
+            ).sort((a, b) => {
+              if (a.is_primary !== b.is_primary) return b.is_primary ? 1 : -1;
+              return a.first_name.localeCompare(b.first_name);
+            }));
           } else if (payload.eventType === 'DELETE') {
             setContacts(prev => prev.filter(contact => contact.id !== payload.old.id));
           }
