@@ -139,13 +139,30 @@ export const generatePurchaseOrderPDF = async (
   yPosition = Math.max(yPosition + 15, 110) // Add more space after vendor details
   
   if (includeLineItems && lineItems.length > 0) {
-    const tableData = lineItems.map((item, index) => [
-      (index + 1).toString(), // Item number
-      item.item_description,
-      item.quantity.toString(),
-      `$${parseFloat(item.unit_price.toString()).toFixed(2)}`,
-      `$${parseFloat(item.line_total.toString()).toFixed(2)}`
-    ])
+    let itemCounter = 1
+    const tableData = lineItems.map((item) => {
+      if (item.is_heading) {
+        // For headings: no item number, no qty, no price, no total
+        return [
+          '', // No item number
+          item.item_description,
+          '', // No quantity
+          '', // No unit price
+          ''  // No total
+        ]
+      } else {
+        // For regular items: include all details and increment counter
+        const row = [
+          itemCounter.toString(),
+          item.item_description,
+          item.quantity.toString(),
+          `$${parseFloat(item.unit_price.toString()).toFixed(2)}`,
+          `$${parseFloat(item.line_total.toString()).toFixed(2)}`
+        ]
+        itemCounter++
+        return row
+      }
+    })
     
     autoTable(doc, {
       startY: yPosition,
@@ -173,6 +190,22 @@ export const generatePurchaseOrderPDF = async (
       margin: { left: 20, right: 20 },
       alternateRowStyles: {
         fillColor: [250, 250, 250]
+      },
+      didParseCell: function (data) {
+        const rowIndex = data.row.index
+        const item = lineItems[rowIndex]
+        
+        // Style heading rows differently
+        if (item && item.is_heading) {
+          data.cell.styles.fontStyle = 'bold'
+          data.cell.styles.fillColor = [230, 230, 230]
+          data.cell.styles.textColor = [33, 33, 33]
+          
+          // For the description cell of headings, make it more prominent
+          if (data.column.index === 1) {
+            data.cell.styles.fontSize = 10
+          }
+        }
       }
     })
     
