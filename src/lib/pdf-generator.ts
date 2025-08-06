@@ -198,7 +198,7 @@ export const generatePurchaseOrderPDF = async (
         // Style heading rows differently
         if (item && item.is_heading) {
           data.cell.styles.fontStyle = 'bold'
-          data.cell.styles.fillColor = [230, 230, 230]
+          data.cell.styles.fillColor = [200, 200, 200] // Darker gray for better distinction
           data.cell.styles.textColor = [33, 33, 33]
           
           // For the description cell of headings, make it more prominent
