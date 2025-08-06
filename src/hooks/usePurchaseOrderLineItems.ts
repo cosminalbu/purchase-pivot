@@ -113,8 +113,8 @@ export const usePurchaseOrderLineItems = (purchaseOrderId?: string, applyGst: bo
     }
   };
 
-  // Calculate totals
-  const subtotal = lineItems.reduce((sum, item) => sum + item.line_total, 0);
+  // Calculate totals (exclude headings from calculations)
+  const subtotal = lineItems.filter(item => !item.is_heading).reduce((sum, item) => sum + item.line_total, 0);
   const taxAmount = applyGst ? subtotal * 0.1 : 0; // 10% GST only if supplier is GST registered
   const totalAmount = subtotal + taxAmount;
 

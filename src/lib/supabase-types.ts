@@ -55,6 +55,7 @@ export interface PurchaseOrderLineItem {
   unit_price: number;
   line_total: number;
   notes: string | null;
+  is_heading: boolean;
   created_at: string;
   updated_at: string;
 }

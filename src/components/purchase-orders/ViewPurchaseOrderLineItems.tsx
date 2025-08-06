@@ -62,23 +62,25 @@ export function ViewPurchaseOrderLineItems({ purchaseOrderId }: ViewPurchaseOrde
           </TableHeader>
           <TableBody>
             {lineItems.map((item) => (
-              <TableRow key={item.id}>
+              <TableRow key={item.id} className={item.is_heading ? 'bg-muted/30' : ''}>
                 <TableCell>
                   <div>
-                    <p className="font-medium">{item.item_description}</p>
+                    <p className={`${item.is_heading ? 'font-bold text-foreground' : 'font-medium'}`}>
+                      {item.item_description}
+                    </p>
                     {item.notes && (
                       <p className="text-xs text-muted-foreground mt-1">{item.notes}</p>
                     )}
                   </div>
                 </TableCell>
-                <TableCell className="text-right">
-                  {item.quantity}
+                <TableCell className={`text-right ${item.is_heading ? 'text-muted-foreground' : ''}`}>
+                  {item.is_heading ? '-' : item.quantity}
                 </TableCell>
-                <TableCell className="text-right">
-                  {formatCurrency(item.unit_price)}
+                <TableCell className={`text-right ${item.is_heading ? 'text-muted-foreground' : ''}`}>
+                  {item.is_heading ? '-' : formatCurrency(item.unit_price)}
                 </TableCell>
-                <TableCell className="text-right font-medium">
-                  {formatCurrency(item.line_total)}
+                <TableCell className={`text-right font-medium ${item.is_heading ? 'text-muted-foreground' : ''}`}>
+                  {item.is_heading ? '-' : formatCurrency(item.line_total)}
                 </TableCell>
               </TableRow>
             ))}

@@ -135,6 +135,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_heading: boolean
           item_description: string
           line_total: number
           notes: string | null
@@ -146,6 +147,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_heading?: boolean
           item_description: string
           line_total: number
           notes?: string | null
@@ -157,6 +159,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_heading?: boolean
           item_description?: string
           line_total?: number
           notes?: string | null
