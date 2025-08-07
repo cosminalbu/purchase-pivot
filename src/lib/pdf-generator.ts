@@ -170,8 +170,8 @@ export const generatePurchaseOrderPDF = async (
       body: tableData,
       theme: 'grid',
       headStyles: {
-        fillColor: [0, 0, 0], // Black background
-        textColor: [255, 255, 255], // White text
+        fillColor: [230, 230, 230], // Light gray background to match reference
+        textColor: [33, 33, 33], // Dark text for readability
         fontSize: 9,
         fontStyle: 'bold',
         halign: 'center'
