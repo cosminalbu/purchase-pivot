@@ -181,15 +181,15 @@ export const generatePurchaseOrderPDF = async (
         textColor: [33, 33, 33]
       },
       columnStyles: {
-        0: { cellWidth: 20, halign: 'center' },
-        1: { cellWidth: 90 },
-        2: { cellWidth: 20, halign: 'center' },
-        3: { cellWidth: 25, halign: 'right' },
-        4: { cellWidth: 25, halign: 'right' }
+        0: { cellWidth: 22, halign: 'center' }, // ITEM # - slightly wider
+        1: { cellWidth: 85, halign: 'left' },   // DESCRIPTION - left aligned with padding
+        2: { cellWidth: 18, halign: 'center' }, // QTY - centered
+        3: { cellWidth: 30, halign: 'right' },  // UNIT PRICE - right aligned
+        4: { cellWidth: 25, halign: 'right' }   // TOTAL - right aligned
       },
       margin: { left: 20, right: 20 },
       alternateRowStyles: {
-        fillColor: [250, 250, 250]
+        fillColor: [248, 248, 248] // Slightly lighter alternate rows
       },
       didParseCell: function (data) {
         const rowIndex = data.row.index
@@ -198,13 +198,19 @@ export const generatePurchaseOrderPDF = async (
         // Style heading rows differently
         if (item && item.is_heading) {
           data.cell.styles.fontStyle = 'bold'
-          data.cell.styles.fillColor = [200, 200, 200] // Darker gray for better distinction
+          data.cell.styles.fillColor = [230, 230, 230] // Lighter gray to match reference
           data.cell.styles.textColor = [33, 33, 33]
           
           // For the description cell of headings, make it more prominent
           if (data.column.index === 1) {
             data.cell.styles.fontSize = 10
+            data.cell.styles.halign = 'left' // Ensure left alignment for heading descriptions
           }
+        }
+        
+        // Add slight padding to description cells
+        if (data.column.index === 1 && !item?.is_heading) {
+          data.cell.styles.halign = 'left'
         }
       }
     })
