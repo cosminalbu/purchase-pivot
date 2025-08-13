@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { PurchaseOrder, PurchaseOrderLineItem } from '@/lib/supabase-types';
 import { useToast } from '@/hooks/use-toast';
 import { useActivityLog } from './useActivityLog';
+import { queryClient, queryKeys } from '@/lib/react-query';
 
 export const usePurchaseOrders = () => {
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
@@ -70,6 +71,7 @@ export const usePurchaseOrders = () => {
         title: "Success",
         description: "Purchase order created successfully",
       });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.purchaseOrders.all });
       return data;
     } catch (error) {
       console.error('Error adding purchase order:', error);
@@ -113,6 +115,7 @@ export const usePurchaseOrders = () => {
         title: "Success",
         description: "Purchase order updated successfully",
       });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.purchaseOrders.all });
       return data;
     } catch (error) {
       console.error('Error updating purchase order:', error);
@@ -159,6 +162,7 @@ export const usePurchaseOrders = () => {
         title: "Success",
         description: "Purchase order deleted successfully",
       });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.purchaseOrders.all });
     } catch (error) {
       console.error('Error deleting purchase order:', error);
       toast({
@@ -201,6 +205,7 @@ export const usePurchaseOrders = () => {
         title: "Success",
         description: "Purchase order voided successfully",
       });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.purchaseOrders.all });
       return data;
     } catch (error) {
       console.error('Error voiding purchase order:', error);
