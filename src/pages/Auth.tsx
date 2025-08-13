@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { supabase } from '@/integrations/supabase/client';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -44,6 +46,31 @@ const Auth: React.FC = () => {
   const signupForm = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
   });
+
+  const resetFormSchema = z.object({
+    password: z.string().min(6, 'Password must be at least 6 characters'),
+    confirmPassword: z.string(),
+  }).refine((d) => d.password === d.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });
+
+  const resetForm = useForm<{ password: string; confirmPassword: string }>({
+    resolver: zodResolver(resetFormSchema),
+  });
+
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+
+  // Listen for recovery link opening this page
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setResetDialogOpen(true);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -96,6 +123,39 @@ const Auth: React.FC = () => {
     }
     
     setIsLoading(false);
+  };
+
+  const handleSendReset = async () => {
+    const email = loginForm.getValues('email');
+    if (!email) {
+      toast({
+        title: 'Enter your email',
+        description: 'Please enter your email above, then tap "Forgot password?" again.',
+      });
+      return;
+    }
+    setIsLoading(true);
+    const redirectTo = `${window.location.origin}/auth`;
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+    setIsLoading(false);
+    if (error) {
+      toast({ title: 'Reset failed', description: error.message || 'Could not send reset email.', variant: 'destructive' });
+    } else {
+      toast({ title: 'Check your email', description: 'We sent a password reset link. Open it on this device to continue.' });
+    }
+  };
+
+  const handlePasswordUpdate = async (data: { password: string; confirmPassword: string }) => {
+    setResetLoading(true);
+    const { error } = await supabase.auth.updateUser({ password: data.password });
+    setResetLoading(false);
+    if (error) {
+      toast({ title: 'Update failed', description: error.message || 'Could not update password.', variant: 'destructive' });
+    } else {
+      toast({ title: 'Password updated', description: 'You are now signed in.' });
+      setResetDialogOpen(false);
+      navigate('/', { replace: true });
+    }
   };
 
   return (
@@ -152,6 +212,14 @@ const Auth: React.FC = () => {
                   disabled={isLoading}
                 >
                   {isLoading ? 'Signing In...' : 'Sign In'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="link"
+                  className="w-full"
+                  onClick={handleSendReset}
+                >
+                  Forgot password?
                 </Button>
               </form>
             </TabsContent>
@@ -244,6 +312,40 @@ const Auth: React.FC = () => {
               </form>
             </TabsContent>
           </Tabs>
+
+          <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Reset your password</DialogTitle>
+                <DialogDescription>Enter a new password for your account.</DialogDescription>
+              </DialogHeader>
+              <form onSubmit={resetForm.handleSubmit(handlePasswordUpdate)} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">New Password</Label>
+                  <Input id="new-password" type="password" {...resetForm.register('password')} />
+                  {resetForm.formState.errors.password && (
+                    <p className="text-sm text-destructive">
+                      {resetForm.formState.errors.password.message}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-new-password">Confirm New Password</Label>
+                  <Input id="confirm-new-password" type="password" {...resetForm.register('confirmPassword')} />
+                  {resetForm.formState.errors.confirmPassword && (
+                    <p className="text-sm text-destructive">
+                      {resetForm.formState.errors.confirmPassword.message}
+                    </p>
+                  )}
+                </div>
+                <DialogFooter>
+                  <Button type="submit" disabled={resetLoading}>
+                    {resetLoading ? 'Updating...' : 'Update Password'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
     </div>
