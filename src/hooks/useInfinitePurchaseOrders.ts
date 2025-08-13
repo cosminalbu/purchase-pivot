@@ -59,6 +59,7 @@ export const useInfinitePurchaseOrders = ({
       const { data, error, count } = await query
 
       if (error) {
+        console.error('Purchase Orders query error:', error)
         throw error
       }
 
