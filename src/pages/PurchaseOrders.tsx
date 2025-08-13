@@ -78,10 +78,8 @@ const PurchaseOrders = () => {
   const loading = isLoading;
   const isMobile = useIsMobile();
 
-  // Enhanced filtering with active filters
+  // Enhanced filtering with active filters (search is handled by database query)
   const filteredPOs = purchaseOrders.filter(po => {
-    const matchesSearch = po.po_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         ((po.suppliers as any)?.company_name || "").toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || po.status === statusFilter;
 
     // Apply active filters
@@ -96,7 +94,7 @@ const PurchaseOrders = () => {
       }
     });
 
-    return matchesSearch && matchesStatus && matchesActiveFilters;
+    return matchesStatus && matchesActiveFilters;
   });
 
   // Filter options for enhanced search
