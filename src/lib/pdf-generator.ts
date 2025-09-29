@@ -45,6 +45,8 @@ export const generatePurchaseOrderPDF = async (
   doc.text(`Phone: ${companyPhone}`, 20, yPosition)
   yPosition += 4
   doc.text(`Email: ${companyEmail}`, 20, yPosition)
+  yPosition += 4
+  doc.text('ABN: 52 679 487 248', 20, yPosition)
   
   // PO Number and Date boxes - Top Right (reordered)
   const rightColumnX = pageWidth - 85
