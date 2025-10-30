@@ -10,7 +10,6 @@ import {
   BarChart3, 
   Settings,
   Bell,
-  Search,
   Plus,
   User,
   LogOut
@@ -83,18 +82,6 @@ const Layout = ({ children, notificationCenter }: LayoutProps) => {
             <div className="flex items-center space-x-3">
               <img src={logo} alt="PO Manager" className="h-8 w-8" />
               <h1 className="text-xl font-semibold text-foreground">PO Manager</h1>
-            </div>
-
-            {/* Search */}
-            <div className="flex-1 max-w-md mx-8">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <input
-                  type="text"
-                  placeholder="Search purchase orders, suppliers..."
-                  className="w-full pl-10 pr-4 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                />
-              </div>
             </div>
 
             {/* Actions */}
