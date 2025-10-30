@@ -15,9 +15,19 @@ export const useInfinitePurchaseOrders = ({
   statusFilter = '',
   supplierFilter = ''
 }: UseInfinitePurchaseOrdersParams = {}) => {
+  console.log('🔍 useInfinitePurchaseOrders called:', { searchQuery, statusFilter, supplierFilter })
+  
   return useInfiniteQuery({
     queryKey: queryKeys.purchaseOrders.infinite({ searchQuery, statusFilter, supplierFilter }),
     queryFn: async ({ pageParam = 0 }) => {
+      console.log('📞 Calling search_purchase_orders RPC:', {
+        search_text: searchQuery.trim() || null,
+        status_filter: statusFilter || null,
+        supplier_filter: supplierFilter || null,
+        page_offset: pageParam * POS_PER_PAGE,
+        page_limit: POS_PER_PAGE
+      })
+      
       // Use the database function for efficient cross-table search
       const { data, error } = await supabase.rpc('search_purchase_orders', {
         search_text: searchQuery.trim() || null,
@@ -28,9 +38,11 @@ export const useInfinitePurchaseOrders = ({
       })
 
       if (error) {
-        console.error('Purchase Orders search error:', error)
+        console.error('❌ Purchase Orders search error:', error)
         throw error
       }
+      
+      console.log('✅ RPC returned:', data?.length, 'results')
 
       // Transform the flat result from the function to match the expected structure
       const purchaseOrders = (data || []).map((row: any) => ({

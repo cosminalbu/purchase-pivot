@@ -43,6 +43,11 @@ export function EnhancedSearch({
 }: EnhancedSearchProps) {
   const [debouncedValue, setDebouncedValue] = useState(searchValue)
 
+  // Sync local state with prop changes
+  useEffect(() => {
+    setDebouncedValue(searchValue)
+  }, [searchValue])
+
   // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
