@@ -38,9 +38,10 @@ export const useInfiniteSuppliers = ({
         .order('company_name')
         .range(pageParam * SUPPLIERS_PER_PAGE, (pageParam + 1) * SUPPLIERS_PER_PAGE - 1)
 
-      // Apply search filter
+      // Apply search filter with proper syntax for partial matching
       if (searchQuery.trim()) {
-        query = query.or(`company_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%,abn.ilike.%${searchQuery}%`)
+        const searchPattern = `%${searchQuery}%`
+        query = query.or(`company_name.ilike.${searchPattern},email.ilike.${searchPattern},abn.ilike.${searchPattern}`)
       }
 
       // Apply status filters

@@ -41,9 +41,11 @@ export const useInfinitePurchaseOrders = ({
         .order('created_at', { ascending: false })
         .range(pageParam * POS_PER_PAGE, (pageParam + 1) * POS_PER_PAGE - 1)
 
-      // Apply search filter
+      // Apply search filter with proper syntax for partial matching
       if (searchQuery.trim()) {
-        query = query.or(`po_number.ilike.%${searchQuery}%,notes.ilike.%${searchQuery}%,suppliers.company_name.ilike.%${searchQuery}%`)
+        const searchPattern = `%${searchQuery}%`
+        // Search across PO number, notes, and supplier company name
+        query = query.or(`po_number.ilike.${searchPattern},notes.ilike.${searchPattern},suppliers(company_name).ilike.${searchPattern}`)
       }
 
       // Apply status filter
