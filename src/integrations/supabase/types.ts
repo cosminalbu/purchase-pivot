@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
@@ -342,34 +342,52 @@ export type Database = {
     Functions: {
       create_notification: {
         Args: {
-          p_user_id: string
-          p_title: string
-          p_message: string
-          p_type: string
           p_category: string
+          p_message: string
           p_metadata?: Json
+          p_title: string
+          p_type: string
+          p_user_id: string
         }
         Returns: string
       }
-      generate_po_number: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_user_role: {
-        Args: { user_id: string }
-        Returns: string
-      }
+      generate_po_number: { Args: never; Returns: string }
+      get_user_role: { Args: { user_id: string }; Returns: string }
       log_activity: {
         Args: {
-          p_user_id: string
-          p_entity_type: string
-          p_entity_id: string
           p_action: string
           p_description: string
-          p_old_values?: Json
+          p_entity_id: string
+          p_entity_type: string
           p_new_values?: Json
+          p_old_values?: Json
+          p_user_id: string
         }
         Returns: string
+      }
+      search_purchase_orders: {
+        Args: {
+          page_limit?: number
+          page_offset?: number
+          search_text: string
+          status_filter?: string
+          supplier_filter?: string
+        }
+        Returns: {
+          created_at: string
+          delivery_date: string
+          id: string
+          notes: string
+          order_date: string
+          po_number: string
+          status: Database["public"]["Enums"]["purchase_order_status"]
+          subtotal: number
+          supplier_company_name: string
+          supplier_id: string
+          tax_amount: number
+          total_amount: number
+          updated_at: string
+        }[]
       }
     }
     Enums: {

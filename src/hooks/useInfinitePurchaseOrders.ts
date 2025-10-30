@@ -18,58 +18,45 @@ export const useInfinitePurchaseOrders = ({
   return useInfiniteQuery({
     queryKey: queryKeys.purchaseOrders.infinite({ searchQuery, statusFilter, supplierFilter }),
     queryFn: async ({ pageParam = 0 }) => {
-      let query = supabase
-        .from('purchase_orders')
-        .select(`
-          id,
-          po_number,
-          supplier_id,
-          subtotal,
-          tax_amount,
-          total_amount,
-          status,
-          order_date,
-          delivery_date,
-          notes,
-          created_at,
-          updated_at,
-          suppliers!inner(
-            id,
-            company_name
-          )
-        `)
-        .order('created_at', { ascending: false })
-        .range(pageParam * POS_PER_PAGE, (pageParam + 1) * POS_PER_PAGE - 1)
-
-      // Apply search filter with proper syntax for partial matching
-      if (searchQuery.trim()) {
-        const searchPattern = `%${searchQuery}%`
-        // Search across PO number, notes, and supplier company name
-        query = query.or(`po_number.ilike.${searchPattern},notes.ilike.${searchPattern},suppliers(company_name).ilike.${searchPattern}`)
-      }
-
-      // Apply status filter
-      if (statusFilter) {
-        query = query.eq('status', statusFilter)
-      }
-
-      // Apply supplier filter
-      if (supplierFilter) {
-        query = query.eq('supplier_id', supplierFilter)
-      }
-
-      const { data, error, count } = await query
+      // Use the database function for efficient cross-table search
+      const { data, error } = await supabase.rpc('search_purchase_orders', {
+        search_text: searchQuery.trim() || null,
+        status_filter: statusFilter || null,
+        supplier_filter: supplierFilter || null,
+        page_offset: pageParam * POS_PER_PAGE,
+        page_limit: POS_PER_PAGE
+      })
 
       if (error) {
-        console.error('Purchase Orders query error:', error)
+        console.error('Purchase Orders search error:', error)
         throw error
       }
 
+      // Transform the flat result from the function to match the expected structure
+      const purchaseOrders = (data || []).map((row: any) => ({
+        id: row.id,
+        po_number: row.po_number,
+        supplier_id: row.supplier_id,
+        subtotal: row.subtotal,
+        tax_amount: row.tax_amount,
+        total_amount: row.total_amount,
+        status: row.status,
+        order_date: row.order_date,
+        delivery_date: row.delivery_date,
+        notes: row.notes,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        suppliers: {
+          id: row.supplier_id,
+          company_name: row.supplier_company_name
+        }
+      }))
+
       return {
-        purchaseOrders: data || [],
+        purchaseOrders,
         nextCursor: data && data.length === POS_PER_PAGE ? pageParam + 1 : null,
         hasMore: data && data.length === POS_PER_PAGE,
-        total: count || 0,
+        total: data?.length || 0,
       }
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor,
