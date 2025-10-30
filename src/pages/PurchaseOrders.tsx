@@ -48,6 +48,8 @@ import { PurchaseOrder } from "@/lib/supabase-types";
 import { useToast } from "@/hooks/use-toast";
 
 const PurchaseOrders = () => {
+  console.log('🚀 PurchaseOrders component loaded - NEW VERSION')
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<POStatus | "all">("all");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
